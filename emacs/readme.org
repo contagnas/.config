@@ -58,32 +58,34 @@ Setup for package management, literate config, etc
 Disable GC during startup
 
 #+begin_src emacs-lisp
-  (setq gc-cons-threshold most-positive-fixnum
-        gc-cons-percentage 1)
+    (setq gc-cons-threshold most-positive-fixnum
+          gc-cons-percentage 1
+          warning-minimum-level :emergency)
 
-  (defun +gc-after-focus-change ()
-    "Run GC when frame loses focus."
-    (run-with-idle-timer
-     5 nil
-     (lambda () (unless (frame-focus-state) (garbage-collect)))))
+    (defun +gc-after-focus-change ()
+      "Run GC when frame loses focus."
+      (run-with-idle-timer
+       5 nil
+       (lambda () (unless (frame-focus-state) (garbage-collect)))))
 #+end_src
 
 Reset init values after elpaca has loaded
 
 #+begin_src emacs-lisp
-  (defun +reset-init-values ()
-    (run-with-idle-timer
-     1 nil
-     (lambda ()
-       (setq ;;file-name-handler-alist default-file-name-handler-alist
-        gc-cons-percentage 0.1
-        gc-cons-threshold 100000000)
-       (message "gc-cons-threshold")
-       (when (boundp 'after-focus-change-function)
-         (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
+    (defun +reset-init-values ()
+      (run-with-idle-timer
+       1 nil
+       (lambda ()
+         (setq ;;file-name-handler-alist default-file-name-handler-alist
+          gc-cons-percentage 0.1
+          gc-cons-threshold 100000000
+          warning-minimum-level :warning)
+         (message "gc-cons-threshold")
+         (when (boundp 'after-focus-change-function)
+           (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
-  (with-eval-after-load 'elpaca
-    (add-hook 'elpaca-after-init-hook '+reset-init-values))
+    (with-eval-after-load 'elpaca
+      (add-hook 'elpaca-after-init-hook '+reset-init-values))
 #+end_src
 
 **** package.el
@@ -380,6 +382,11 @@ Install evil and related packages
       "K" 'evil-window-move-very-top
       "L" 'evil-window-move-far-right
       )
+    ;; don't bind RET or TAB
+    (with-eval-after-load 'evil-maps
+      (define-key evil-motion-state-map (kbd "SPC") nil)
+      (define-key evil-motion-state-map (kbd "RET") nil)
+      (define-key evil-motion-state-map (kbd "TAB") nil))
     (evil-mode)
     )
 #+end_src

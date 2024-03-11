@@ -9,6 +9,7 @@
   (if (file-exists-p (expand-file-name "readme.elc" user-emacs-directory))
       (load-file (expand-file-name "readme.elc" user-emacs-directory))
     ;; Otherwise use org-babel to tangle and load the configuration
+    (setq org-return-follows-link t)
     (require 'org)
 
     ;; This might not work exactly as expected - readme.org also contains early-init.el code,
