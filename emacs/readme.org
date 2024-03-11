@@ -354,7 +354,10 @@ create spc-menu! to ease the creation of nested menu bindings
 
 ** theme
 #+begin_src emacs-lisp
-  (load-theme 'modus-vivendi)
+  (use-package ef-themes
+    :config
+    (load-theme 'ef-dark t)
+    )
 #+end_src
 
 ** evil
@@ -434,7 +437,7 @@ Transient is included in emacs, but it's too old for magit - install it manually
 #+begin_src emacs-lisp
   (use-package seq)
   (use-package transient :after seq)
-  #+end_src
+#+end_src
 
 #+begin_src emacs-lisp
   (use-package magit
