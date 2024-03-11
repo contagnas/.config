@@ -1,0 +1,435 @@
+* emacs config
+
+** toc :toc_4_gh:
+:PROPERTIES:
+:VISIBILITY: all
+:END:
+- [[#emacs-config][emacs config]]
+  - [[#setup][setup]]
+    - [[#early-init][early-init]]
+      - [[#performance-hacks][performance hacks]]
+      - [[#packageel][package.el]]
+      - [[#ui][ui]]
+    - [[#org-tangling][org tangling]]
+    - [[#install-elpaca][install elpaca]]
+  - [[#general][general]]
+    - [[#config][config]]
+      - [[#setup-1][setup]]
+      - [[#buffers][buffers]]
+      - [[#files][files]]
+      - [[#windows][windows]]
+      - [[#vim-completion][vim completion]]
+  - [[#evil][evil]]
+    - [[#evil-1][evil]]
+    - [[#evil-collection][evil-collection]]
+    - [[#evil-surround][evil-surround]]
+  - [[#which-key][which-key]]
+  - [[#emacs][emacs]]
+  - [[#magit][magit]]
+  - [[#org][org]]
+- [[#refs][refs]]
+- [[#org-settings][org settings]]
+
+** setup
+Setup for package management, literate config, etc
+
+*** early-init
+:PROPERTIES:
+:header-args: :tangle-mode o444 :tangle early-init.el
+:END:
+
+#+begin_src emacs-lisp
+  ;; This file is generate by readme.org. Do not edit manually!
+#+end_src
+
+**** performance hacks
+Disable GC during startup
+
+#+begin_src emacs-lisp
+  (setq gc-cons-threshold most-positive-fixnum
+        gc-cons-percentage 1)
+
+  (defun +gc-after-focus-change ()
+    "Run GC when frame loses focus."
+    (run-with-idle-timer
+     5 nil
+     (lambda () (unless (frame-focus-state) (garbage-collect)))))
+#+end_src
+
+Reset init values after elpaca has loaded
+
+#+begin_src emacs-lisp
+  (defun +reset-init-values ()
+    (run-with-idle-timer
+     1 nil
+     (lambda ()
+       (setq ;;file-name-handler-alist default-file-name-handler-alist
+        gc-cons-percentage 0.1
+        gc-cons-threshold 100000000)
+       (message "gc-cons-threshold")
+       (when (boundp 'after-focus-change-function)
+         (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
+
+  (with-eval-after-load 'elpaca
+    (add-hook 'elpaca-after-init-hook '+reset-init-values))
+#+end_src
+
+**** package.el
+Disable package.el, we'll use elpaca
+#+begin_src emacs-lisp
+  (setq package-enable-at-startup nil)
+#+end_src
+
+**** ui
+Disable UI stuff. Doing it here keeps it from flashing on startup
+#+begin_src emacs-lisp
+  (push '(menu-bar-lines . 0) default-frame-alist)
+  (push '(tool-bar-lines . 0) default-frame-alist)
+  (push '(vertical-scroll-bars) default-frame-alist)
+#+end_src
+
+Disable the fucking bell too
+
+#+begin_src emacs-lisp
+  (setq ring-bell-function #'ignore
+        inhibit-startup-screen t)
+#+end_src
+
+*** org tangling
+This tells emacs to automatically tangle all code blocks in this file when generating the code for the config
+
+#+BEGIN_SRC :tangle no
+header-args :tangle-mode o444 :tangle readme.el
+#+END_SRC
+
+*** install elpaca
+Run the elpaca installation code; this is from the readme
+
+#+begin_src emacs-lisp
+  (defvar elpaca-installer-version 0.7)
+  (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+  (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+  (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+  (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                                :ref nil :depth 1
+                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                :build (:not elpaca--activate-package)))
+  (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+         (build (expand-file-name "elpaca/" elpaca-builds-directory))
+         (order (cdr elpaca-order))
+         (default-directory repo))
+    (add-to-list 'load-path (if (file-exists-p build) build repo))
+    (unless (file-exists-p repo)
+      (make-directory repo t)
+      (when (< emacs-major-version 28) (require 'subr-x))
+      (condition-case-unless-debug err
+          (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                   ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                   ,@(when-let ((depth (plist-get order :depth)))
+                                                       (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                   ,(plist-get order :repo) ,repo))))
+                   ((zerop (call-process "git" nil buffer t "checkout"
+                                         (or (plist-get order :ref) "--"))))
+                   (emacs (concat invocation-directory invocation-name))
+                   ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                         "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                   ((require 'elpaca))
+                   ((elpaca-generate-autoloads "elpaca" repo)))
+              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+            (error "%s" (with-current-buffer buffer (buffer-string))))
+        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+    (unless (require 'elpaca-autoloads nil t)
+      (require 'elpaca)
+      (elpaca-generate-autoloads "elpaca" repo)
+      (load "./elpaca-autoloads")))
+  (add-hook 'after-init-hook #'elpaca-process-queues)
+  (elpaca `(,@elpaca-order))
+
+#+end_src
+
+Use elpaca to install packages in use-package
+
+#+begin_src emacs-lisp
+  ;; Install use-package support
+  (elpaca elpaca-use-package
+    ;; Enable use-package :ensure support for Elpaca.
+    (elpaca-use-package-mode)
+    (setq elpaca-use-package-by-default t
+          use-package-always-ensure t))
+
+
+  ;; Block until current queue processed.
+  (elpaca-wait)
+#+end_src
+
+use-feature macro
+
+#+begin_src emacs-lisp
+  (defmacro use-feature (name &rest args)
+    "Like `use-package' but accounting for asynchronous installation.
+    NAME and ARGS are in `use-package'."
+    (declare (indent defun))
+    `(use-package ,name
+       :ensure nil
+       ,@args))
+#+end_src
+
+** general
+Install general; do this before other packages because we need to `elpaca-wait`. This adds the `:general` keyword to `use-package`.
+
+#+begin_src emacs-lisp
+  (use-package general
+    :demand t
+    :config
+    (general-override-mode)
+    (general-auto-unbind-keys)
+    <<general-config>>)
+
+  (elpaca-wait)
+#+end_src
+
+*** config
+Code blocks in this section are injected into the general use-package at the <<general-config>>.
+:PROPERTIES:
+:header-args: :noweb-ref general-config
+:END:
+
+**** setup
+
+
+Setup SPC as the leader
+
+#+begin_src emacs-lisp :noweb-ref general-config
+  (general-define-key
+   :keymaps 'override
+   :states '(insert normal hybrid motion visual operator emacs)
+   :prefix-map '+prefix-map
+   :prefix "SPC"
+   :global-prefix "S-SPC")
+
+  (general-create-definer global-definer
+    :wk-full-keys nil
+    :keymaps '+prefix-map)
+
+  (global-definer
+    "SPC" 'execute-extended-command
+    "/"   'occur
+    "!"   'shell-command
+    ":"   'eval-expression
+    "."   'repeat
+    "h"   (general-simulate-key "C-h" :which-key "help")
+    )
+
+  (general-create-definer global-leader
+    :keymaps 'override
+    :states '(insert normal hybrid motion visual operator)
+    :prefix "SPC m"
+    :non-normal-prefix "S-SPC m"
+    "" '( :ignore t
+          :which-key
+          (lambda (arg)
+            (cons (cadr (split-string (car arg) " "))
+                  (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
+#+end_src
+
+creaTe +general-global-menu! to ease the creation of nested menu bindings
+
+#+begin_src emacs-lisp
+  (defmacro +general-global-menu! (name prefix-key &rest body)
+    "Create a definer named +general-global-NAME wrapping global-definer.
+      Create prefix map: +general-global-NAME-map. Prefix bindings in BODY with PREFIX-KEY."
+    (declare (indent 2))
+    (let* ((n (concat "+general-global-" name))
+           (prefix-map (intern (concat n "-map"))))
+      `(progn
+         (general-create-definer ,(intern n)
+           :wrapping global-definer
+           :prefix-map (quote ,prefix-map)
+           :prefix ,prefix-key
+           :wk-full-keys nil
+           "" '(:ignore t :which-key ,name))
+         (,(intern n) ,@body))))
+#+end_src
+
+**** buffers
+#+begin_src emacs-lisp
+  (+general-global-menu! "buffer" "b"
+    "d"  'kill-current-buffer
+    "o" '((lambda () (interactive) (switch-to-buffer nil))
+          :which-key "other-buffer")
+    "p"  'previous-buffer
+    "r"  'rename-buffer
+    "R"  'revert-buffer
+    "M" '((lambda () (interactive) (switch-to-buffer "*Messages*"))
+          :which-key "messages-buffer")
+    "n"  'next-buffer
+    "s"  'scratch-buffer
+    "TAB" '((lambda () (interactive) (switch-to-buffer nil))
+            :which-key "other-buffer")
+    )
+
+#+end_src
+
+**** files
+#+begin_src emacs-lisp 
+  (+general-global-menu! "file" "f"
+    "d"   '((lambda (&optional arg)
+              (interactive "P")
+              (let ((buffer (when arg (current-buffer))))
+                (diff-buffer-with-file buffer)))
+            :which-key "diff-with-file")
+    "c" '((lambda () (interactive) (find-file (concat user-emacs-directory "readme.org")))
+          :which-key "emacs-config-file")
+    "e"   '(:ignore t :which-key "edit")
+    "f"   'find-file
+    "l"   '((lambda (&optional arg)
+              (interactive "P")
+              (call-interactively (if arg #'find-library-other-window #'find-library)))
+            :which-key "+find-library")
+    "p"   'find-function-at-point
+    "P"   'find-function
+    "R"   'rename-file-and-buffer
+    "s"   'save-buffer
+    "v"   'find-variable-at-point
+    "V"   'find-variable)
+#+end_src
+
+**** windows
+#+begin_src emacs-lisp
+  (+general-global-menu! "window" "w"
+    "v" 'split-window-vertically
+    "s" 'split-window-horizontally
+    "=" 'balance-windows
+    "O" 'delete-other-windows
+    "X" '((lambda () (interactive) (call-interactively #'other-window) (kill-buffer-and-window))
+          :which-key "kill-other-buffer-and-window")
+    "d" 'delete-window
+    "h" 'windmove-left
+    "j" 'windmove-down
+    "k" 'windmove-up
+    "l" 'windmove-right
+    "o" 'other-window
+    "t" 'window-toggle-side-windows
+    "."  '(:ingore :which-key "resize")
+    ".h" '((lambda () (interactive)
+             (call-interactively (if (window-prev-sibling) #'enlarge-window-horizontally
+                                   #'shrink-window-horizontally)))
+           :which-key "divider left")
+    ".l" '((lambda () (interactive)
+             (call-interactively (if (window-next-sibling) #'enlarge-window-horizontally
+                                   #'shrink-window-horizontally)))
+           :which-key "divider right")
+    ".j" '((lambda () (interactive)
+             (call-interactively (if (window-next-sibling) #'enlarge-window #'shrink-window)))
+           :which-key "divider up")
+    ".k" '((lambda () (interactive)
+             (call-interactively (if (window-prev-sibling) #'enlarge-window #'shrink-window)))
+           :which-key "divider down")
+    "x" 'kill-buffer-and-window)
+#+end_src
+
+**** vim completion
+#+begin_src emacs-lisp
+  (general-create-definer completion-def
+    :prefix "C-x")
+#+end_src
+
+** evil
+Install evil and related packages
+
+*** evil
+#+begin_src emacs-lisp
+  (use-package evil
+    :custom
+    (evil-want-keybinding nil)
+    (evil-want-C-u-scroll t)
+    (evil-want-C-d-scroll t)
+    (evil-want-Y-yank-to-eol t)
+    (evil-want-integration t)
+    (evil-undo-system 'undo-redo)
+    :config
+
+    (+general-global-window
+      "H" 'evil-window-move-far-left
+      "J" 'evil-window-move-very-bottom
+      "K" 'evil-window-move-very-top
+      "L" 'evil-window-move-far-right
+      )
+    (evil-mode)
+    )
+#+end_src
+
+*** evil-collection
+#+begin_src emacs-lisp
+  (use-package evil-collection
+    :after evil
+    :ensure t
+    :config
+    (evil-collection-init)
+    )
+#+end_src
+
+*** evil-surround
+#+begin_src emacs-lisp
+  (use-package evil-surround
+    :after evil
+    :ensure t
+    :config
+    (global-evil-surround-mode 1)
+    )
+#+end_src
+
+** which-key
+#+begin_src emacs-lisp
+  (use-package which-key
+    :config (which-key-mode)
+    )
+#+end_src
+
+** emacs
+#+begin_src emacs-lisp
+  (use-feature emacs
+    :demand t
+    :custom
+    (scroll-conservatively 101 "Scroll just enough to bring text into view")
+    (enable-recursive-minibuffers t "Allow minibuffer commands in minibuffer")
+    (frame-title-format '(buffer-file-name "%f" ("%b"))
+                        "Make frame title current file's name.")
+    (find-library-include-other-files nil)
+    (indent-tabs-mode nil "Use spaces, not tabs")
+    (inhibit-startup-screen t)
+    (history-delete-duplicates t "Don't clutter history")
+    (pgtk-use-im-context-on-new-connection nil "Prevent GTK from stealing Shift + Space")
+    (sentence-end-double-space nil "Double space sentence demarcation breaks sentence navigation in Evil")
+    (tab-stop-list (number-sequence 2 120 2))
+    (tab-width 2 "Shorter tab widths")
+    (completion-styles '(flex basic partial-completion emacs22))
+    )
+#+end_src
+
+** magit
+Transient is included in emacs, but it's too old for magit - install it manually
+#+begin_src emacs-lisp
+  (use-package transient)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package magit :after transient)
+#+end_src
+
+** org
+toc-org, for the table of contents in this file
+#+begin_src emacs-lisp
+  (use-package toc-org
+    :after org
+    :init (add-hook 'org-mode-hook #'toc-org-mode))
+#+end_src
+* refs
+Places this config is stolen from:
+
+https://github.com/progfolio/.emacs.d
+https://github.com/frap/emacs-literate
+
+* org settings
+#+startup: show2levels
+#+property: header-args :mkdirp yes :tangle-mode: #o444 :noweb yes
