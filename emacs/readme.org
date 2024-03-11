@@ -410,7 +410,8 @@ Install evil and related packages
 ** magit
 Transient is included in emacs, but it's too old for magit - install it manually
 #+begin_src emacs-lisp
-  (use-package transient)
+  (use-package seq)
+  (use-package transient :after seq)
 #+end_src
 
 #+begin_src emacs-lisp
