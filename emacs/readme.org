@@ -18,7 +18,9 @@
       - [[#buffers][buffers]]
       - [[#files][files]]
       - [[#windows][windows]]
+      - [[#project][project]]
       - [[#vim-completion][vim completion]]
+  - [[#theme][theme]]
   - [[#evil][evil]]
     - [[#evil-1][evil]]
     - [[#evil-collection][evil-collection]]
@@ -27,6 +29,16 @@
   - [[#emacs][emacs]]
   - [[#magit][magit]]
   - [[#org][org]]
+  - [[#savehist][savehist]]
+  - [[#minad][minad]]
+    - [[#vertico][vertico]]
+    - [[#consult][consult]]
+    - [[#marginalia][marginalia]]
+  - [[#projectile][projectile]]
+  - [[#languages][languages]]
+    - [[#scala][scala]]
+    - [[#bazel][bazel]]
+  - [[#eshell][eshell]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
 
@@ -207,12 +219,13 @@ Setup SPC as the leader
    :prefix "SPC"
    :global-prefix "S-SPC")
 
-  (general-create-definer global-definer
+  (general-create-definer spc
     :wk-full-keys nil
     :keymaps '+prefix-map)
 
-  (global-definer
+  (spc
     "SPC" 'execute-extended-command
+    "u" 'universal-argument
     "/"   'occur
     "!"   'shell-command
     ":"   'eval-expression
@@ -232,18 +245,18 @@ Setup SPC as the leader
                   (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))))
 #+end_src
 
-creaTe +general-global-menu! to ease the creation of nested menu bindings
+create spc-menu! to ease the creation of nested menu bindings
 
 #+begin_src emacs-lisp
-  (defmacro +general-global-menu! (name prefix-key &rest body)
-    "Create a definer named +general-global-NAME wrapping global-definer.
-      Create prefix map: +general-global-NAME-map. Prefix bindings in BODY with PREFIX-KEY."
+  (defmacro spc-menu! (name prefix-key &rest body)
+    "Create a definer named spc-KEY wrapping global-definer.
+      Create prefix map: spc-KEY-map. Prefix bindings in BODY with PREFIX-KEY."
     (declare (indent 2))
-    (let* ((n (concat "+general-global-" name))
+    (let* ((n (concat "spc-" prefix-key))
            (prefix-map (intern (concat n "-map"))))
       `(progn
          (general-create-definer ,(intern n)
-           :wrapping global-definer
+           :wrapping spc
            :prefix-map (quote ,prefix-map)
            :prefix ,prefix-key
            :wk-full-keys nil
@@ -253,7 +266,7 @@ creaTe +general-global-menu! to ease the creation of nested menu bindings
 
 **** buffers
 #+begin_src emacs-lisp
-  (+general-global-menu! "buffer" "b"
+  (spc-menu! "buffer" "b"
     "d"  'kill-current-buffer
     "o" '((lambda () (interactive) (switch-to-buffer nil))
           :which-key "other-buffer")
@@ -272,7 +285,7 @@ creaTe +general-global-menu! to ease the creation of nested menu bindings
 
 **** files
 #+begin_src emacs-lisp 
-  (+general-global-menu! "file" "f"
+  (spc-menu! "file" "f"
     "d"   '((lambda (&optional arg)
               (interactive "P")
               (let ((buffer (when arg (current-buffer))))
@@ -296,7 +309,7 @@ creaTe +general-global-menu! to ease the creation of nested menu bindings
 
 **** windows
 #+begin_src emacs-lisp
-  (+general-global-menu! "window" "w"
+  (spc-menu! "window" "w"
     "v" 'split-window-vertically
     "s" 'split-window-horizontally
     "=" 'balance-windows
@@ -310,6 +323,7 @@ creaTe +general-global-menu! to ease the creation of nested menu bindings
     "l" 'windmove-right
     "o" 'other-window
     "t" 'window-toggle-side-windows
+    "m" 'delete-other-windows
     "."  '(:ingore :which-key "resize")
     ".h" '((lambda () (interactive)
              (call-interactively (if (window-prev-sibling) #'enlarge-window-horizontally
@@ -328,10 +342,19 @@ creaTe +general-global-menu! to ease the creation of nested menu bindings
     "x" 'kill-buffer-and-window)
 #+end_src
 
+**** project
+#+begin_src emacs-lisp
+  (spc-menu! "project" "p")
+#+end_src
 **** vim completion
 #+begin_src emacs-lisp
   (general-create-definer completion-def
     :prefix "C-x")
+#+end_src
+
+** theme
+#+begin_src emacs-lisp
+  (load-theme 'modus-vivendi)
 #+end_src
 
 ** evil
@@ -348,8 +371,7 @@ Install evil and related packages
     (evil-want-integration t)
     (evil-undo-system 'undo-redo)
     :config
-
-    (+general-global-window
+    (spc-w
       "H" 'evil-window-move-far-left
       "J" 'evil-window-move-very-bottom
       "K" 'evil-window-move-very-top
@@ -412,10 +434,12 @@ Transient is included in emacs, but it's too old for magit - install it manually
 #+begin_src emacs-lisp
   (use-package seq)
   (use-package transient :after seq)
-#+end_src
+  #+end_src
 
 #+begin_src emacs-lisp
-  (use-package magit :after transient)
+  (use-package magit
+    :after transient
+    :general (spc "m" 'magit))
 #+end_src
 
 ** org
@@ -424,6 +448,101 @@ toc-org, for the table of contents in this file
   (use-package toc-org
     :after org
     :init (add-hook 'org-mode-hook #'toc-org-mode))
+#+end_src
+** savehist
+#+begin_src emacs-lisp
+  (use-feature savehist
+    :init
+    (savehist-mode))
+#+end_src
+
+** minad
+Install everything minad has written
+
+*** vertico
+#+begin_src emacs-lisp
+  (use-package vertico
+    :init (vertico-mode)
+    )
+#+end_src
+
+ok this one is not minad but it's his rec
+#+begin_src emacs-lisp
+  (use-package orderless
+    :init
+    ;; Configure a custom style dispatcher (see the Consult wiki)
+    ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
+    ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+    (setq completion-styles '(orderless basic)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+*** consult
+#+begin_src emacs-lisp
+  (use-package consult
+    :general
+    (spc-b
+      "b" 'consult-buffer)
+    (spc-
+     "b" 'consult-buffer-other-window)
+    (spc-p
+      "s" 'consult-ripgrep)
+    ;;"ps" 'consult-ripgrep
+    ;;"tp" 'consult-yank-from-kill-ring
+
+    :config
+    (setq consult-narrow-key "<")
+    )
+#+end_src
+
+*** marginalia
+marginalia enables richer annotations in the minibuffer
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :init
+    (marginalia-mode))
+#+end_src
+
+** projectile
+#+begin_src emacs-lisp
+  (use-package projectile)
+
+  (use-package consult-projectile
+    :after projectile
+    :general
+    (spc-p
+      "f" 'consult-projectile))
+#+end_src
+** languages
+*** scala
+#+begin_src emacs-lisp
+  (use-package scala-mode)
+#+end_src
+
+*** bazel
+#+begin_src emacs-lisp
+  (use-package bazel)
+#+end_src
+
+** eshell
+#+begin_src emacs-lisp
+  (use-feature eshell
+    :preface
+    (defalias 'eshell/f 'find-file)
+    (defun eshell/clear ()
+      "Clear the eshell buffer."
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (eshell-send-input)))
+
+    :config
+    ;;(add-hook 'eshell-post-command-hook 'post-test)
+    :general
+    (spc
+      :no-autoload t
+      "e" '(eshell :wk)))
+
 #+end_src
 * refs
 Places this config is stolen from:
