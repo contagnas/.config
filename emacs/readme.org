@@ -38,6 +38,8 @@
   - [[#languages][languages]]
     - [[#scala][scala]]
     - [[#bazel][bazel]]
+    - [[#gleam][gleam]]
+    - [[#nix][nix]]
   - [[#eshell][eshell]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
@@ -525,6 +527,11 @@ marginalia enables richer annotations in the minibuffer
       "f" 'consult-projectile))
 #+end_src
 ** languages
+Tree sitter list. Items are added in language blocks. See https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
+#+begin_src emacs-lisp
+(setq treesit-language-source-alist '(<<tree-sitter-mapping>>))
+#+end_src
+
 *** scala
 #+begin_src emacs-lisp
   (use-package scala-mode)
@@ -533,6 +540,17 @@ marginalia enables richer annotations in the minibuffer
 *** bazel
 #+begin_src emacs-lisp
   (use-package bazel)
+#+end_src
+
+*** gleam
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping
+(gleam "https://github.com/gleam-lang/tree-sitter-gleam")
+#+end_src
+
+*** nix
+#+begin_src emacs-lisp
+  (use-package nix-mode
+    )
 #+end_src
 
 ** eshell
