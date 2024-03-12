@@ -35,12 +35,12 @@
     - [[#consult][consult]]
     - [[#marginalia][marginalia]]
   - [[#projectile][projectile]]
+  - [[#eshell][eshell]]
   - [[#languages][languages]]
     - [[#scala][scala]]
     - [[#bazel][bazel]]
     - [[#gleam][gleam]]
     - [[#nix][nix]]
-  - [[#eshell][eshell]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
 
@@ -526,6 +526,23 @@ marginalia enables richer annotations in the minibuffer
     (spc-p
       "f" 'consult-projectile))
 #+end_src
+** eshell
+#+begin_src emacs-lisp
+  (use-feature eshell
+    :preface
+    (defalias 'eshell/f 'find-file)
+    (defun eshell/clear ()
+      "Clear the eshell buffer."
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (eshell-send-input)))
+
+    :config
+    (spc
+      :no-autoload t
+      "e" '(eshell :wk)))
+
+#+end_src
 ** languages
 Tree sitter list. Items are added in language blocks. See https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
 #+begin_src emacs-lisp
@@ -553,25 +570,6 @@ Tree sitter list. Items are added in language blocks. See https://www.masteringe
     )
 #+end_src
 
-** eshell
-#+begin_src emacs-lisp
-  (use-feature eshell
-    :preface
-    (defalias 'eshell/f 'find-file)
-    (defun eshell/clear ()
-      "Clear the eshell buffer."
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (eshell-send-input)))
-
-    :config
-    ;;(add-hook 'eshell-post-command-hook 'post-test)
-    :general
-    (spc
-      :no-autoload t
-      "e" '(eshell :wk)))
-
-#+end_src
 * refs
 Places this config is stolen from:
 
