@@ -14,11 +14,12 @@
     - [[#install-elpaca][install elpaca]]
   - [[#general][general]]
     - [[#config][config]]
-      - [[#setup-1][setup]]
+      - [[#leader][leader]]
       - [[#buffers][buffers]]
       - [[#files][files]]
       - [[#windows][windows]]
       - [[#project][project]]
+      - [[#quit][quit]]
       - [[#vim-completion][vim completion]]
   - [[#theme][theme]]
   - [[#evil][evil]]
@@ -40,6 +41,7 @@
     - [[#scala][scala]]
     - [[#bazel][bazel]]
     - [[#gleam][gleam]]
+    - [[#rust][rust]]
     - [[#nix][nix]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
@@ -60,15 +62,15 @@ Setup for package management, literate config, etc
 Disable GC during startup
 
 #+begin_src emacs-lisp
-    (setq gc-cons-threshold most-positive-fixnum
-          gc-cons-percentage 1
-          warning-minimum-level :emergency)
+  (setq gc-cons-threshold most-positive-fixnum
+        gc-cons-percentage 1
+        warning-minimum-level :emergency)
 
-    (defun +gc-after-focus-change ()
-      "Run GC when frame loses focus."
-      (run-with-idle-timer
-       5 nil
-       (lambda () (unless (frame-focus-state) (garbage-collect)))))
+  (defun +gc-after-focus-change ()
+    "Run GC when frame loses focus."
+    (run-with-idle-timer
+     5 nil
+     (lambda () (unless (frame-focus-state) (garbage-collect)))))
 #+end_src
 
 Reset init values after elpaca has loaded
@@ -210,8 +212,7 @@ Code blocks in this section are injected into the general use-package at the <<g
 :header-args: :noweb-ref general-config
 :END:
 
-**** setup
-
+**** leader
 
 Setup SPC as the leader
 
@@ -221,7 +222,8 @@ Setup SPC as the leader
    :states '(insert normal hybrid motion visual operator emacs)
    :prefix-map '+prefix-map
    :prefix "SPC"
-   :global-prefix "S-SPC")
+   :global-prefix "M-S-SPC"
+   )
 
   (general-create-definer spc
     :wk-full-keys nil
@@ -229,19 +231,20 @@ Setup SPC as the leader
 
   (spc
     "SPC" 'execute-extended-command
-    "u" 'universal-argument
+    "u"   'universal-argument
     "/"   'occur
     "!"   'shell-command
     ":"   'eval-expression
     "."   'repeat
     "h"   (general-simulate-key "C-h" :which-key "help")
+    "r"   'async-shell-command
     )
 
   (general-create-definer global-leader
     :keymaps 'override
     :states '(insert normal hybrid motion visual operator)
     :prefix "SPC m"
-    :non-normal-prefix "S-SPC m"
+    :non-normal-prefix "M-S-SPC m"
     "" '( :ignore t
           :which-key
           (lambda (arg)
@@ -251,7 +254,7 @@ Setup SPC as the leader
 
 create spc-menu! to ease the creation of nested menu bindings
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb-ref general-config :tangle no
   (defmacro spc-menu! (name prefix-key &rest body)
     "Create a definer named spc-KEY wrapping global-definer.
       Create prefix map: spc-KEY-map. Prefix bindings in BODY with PREFIX-KEY."
@@ -269,7 +272,7 @@ create spc-menu! to ease the creation of nested menu bindings
 #+end_src
 
 **** buffers
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb-ref general-config :tangle no
   (spc-menu! "buffer" "b"
     "d"  'kill-current-buffer
     "o" '((lambda () (interactive) (switch-to-buffer nil))
@@ -284,7 +287,6 @@ create spc-menu! to ease the creation of nested menu bindings
     "TAB" '((lambda () (interactive) (switch-to-buffer nil))
             :which-key "other-buffer")
     )
-
 #+end_src
 
 **** files
@@ -314,8 +316,8 @@ create spc-menu! to ease the creation of nested menu bindings
 **** windows
 #+begin_src emacs-lisp
   (spc-menu! "window" "w"
-    "v" 'split-window-vertically
-    "s" 'split-window-horizontally
+    "s" 'split-window-vertically
+    "v" 'split-window-horizontally
     "=" 'balance-windows
     "O" 'delete-other-windows
     "X" '((lambda () (interactive) (call-interactively #'other-window) (kill-buffer-and-window))
@@ -350,6 +352,12 @@ create spc-menu! to ease the creation of nested menu bindings
 #+begin_src emacs-lisp
   (spc-menu! "project" "p")
 #+end_src
+**** quit
+#+begin_src emacs-lisp
+  (spc-menu! "quit" "q"
+    "r" 'restart-emacs)
+#+end_src
+
 **** vim completion
 #+begin_src emacs-lisp
   (general-create-definer completion-def
@@ -359,8 +367,11 @@ create spc-menu! to ease the creation of nested menu bindings
 ** theme
 #+begin_src emacs-lisp
   (use-package ef-themes
-    :config
+    :init
     (load-theme 'ef-dark t)
+    :custom-face
+    (mode-line-active ((t (:box (:line-width 2 :color "#2a2a75")))))
+    (mode-line-inactive ((t (:box (:line-width 2 :color "#2b2b2b")))))
     )
 #+end_src
 
@@ -424,6 +435,8 @@ Install evil and related packages
 #+begin_src emacs-lisp
   (use-feature emacs
     :demand t
+    :init
+
     :custom
     (scroll-conservatively 101 "Scroll just enough to bring text into view")
     (enable-recursive-minibuffers t "Allow minibuffer commands in minibuffer")
@@ -544,9 +557,14 @@ marginalia enables richer annotations in the minibuffer
 
 #+end_src
 ** languages
-Tree sitter list. Items are added in language blocks. See https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
+Tree sitter list and installs. Items are added in language blocks. See https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
 #+begin_src emacs-lisp
-(setq treesit-language-source-alist '(<<tree-sitter-mapping>>))
+  (setq treesit-language-source-alist
+        '(
+          <<tree-sitter-mapping>>
+          ))
+
+  (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
 #+end_src
 
 *** scala
@@ -560,8 +578,13 @@ Tree sitter list. Items are added in language blocks. See https://www.masteringe
 #+end_src
 
 *** gleam
-#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping
-(gleam "https://github.com/gleam-lang/tree-sitter-gleam")
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (gleam "https://github.com/gleam-lang/tree-sitter-gleam")
+#+end_src
+
+*** rust
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (rust "https://github.com/tree-sitter/tree-sitter-rust")
 #+end_src
 
 *** nix
