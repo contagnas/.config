@@ -23,7 +23,6 @@
       - [[#vim-completion][vim completion]]
   - [[#theme][theme]]
   - [[#evil][evil]]
-    - [[#evil-1][evil]]
     - [[#evil-collection][evil-collection]]
     - [[#evil-surround][evil-surround]]
   - [[#which-key][which-key]]
@@ -378,7 +377,6 @@ create spc-menu! to ease the creation of nested menu bindings
 ** evil
 Install evil and related packages
 
-*** evil
 #+begin_src emacs-lisp
   (use-package evil
     :custom
