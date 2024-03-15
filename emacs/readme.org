@@ -433,8 +433,6 @@ Install evil and related packages
 #+begin_src emacs-lisp
   (use-feature emacs
     :demand t
-    :init
-
     :custom
     (scroll-conservatively 101 "Scroll just enough to bring text into view")
     (enable-recursive-minibuffers t "Allow minibuffer commands in minibuffer")
@@ -449,6 +447,7 @@ Install evil and related packages
     (tab-stop-list (number-sequence 2 120 2))
     (tab-width 2 "Shorter tab widths")
     (completion-styles '(flex basic partial-completion emacs22))
+    (blink-cursor-mode nil)
     )
 #+end_src
 
