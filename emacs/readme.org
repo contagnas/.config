@@ -562,7 +562,11 @@ Tree sitter list and installs. Items are added in language blocks. See https://w
           <<tree-sitter-mapping>>
           ))
 
-  (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
+  (defun treesit-install-if-missing (lang)
+    (unless (treesit-language-available-p lang)
+      (treesit-install-language-grammar lang)))
+
+  (mapc #'treesit-install-if-missing (mapcar #'car treesit-language-source-alist))
 #+end_src
 
 *** scala
