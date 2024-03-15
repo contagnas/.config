@@ -369,8 +369,8 @@ create spc-menu! to ease the creation of nested menu bindings
     :init
     (load-theme 'ef-dark t)
     :custom-face
-    (mode-line-active ((t (:box (:line-width 2 :color "#2a2a75")))))
-    (mode-line-inactive ((t (:box (:line-width 2 :color "#2b2b2b")))))
+    (mode-line-active ((t (:box (:line-width 4 :color "#2a2a75")))))
+    (mode-line-inactive ((t (:box (:line-width 4 :color "#2b2b2b")))))
     )
 #+end_src
 
