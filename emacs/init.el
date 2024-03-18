@@ -15,5 +15,3 @@
     ;; This might not work exactly as expected - readme.org also contains early-init.el code,
     ;; which will have already been executed. Oh well?
     (org-babel-load-file (expand-file-name "readme.org" user-emacs-directory))))
-
-;;; init.el ends here
