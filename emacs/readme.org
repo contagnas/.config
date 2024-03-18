@@ -30,10 +30,11 @@
   - [[#magit][magit]]
   - [[#org][org]]
   - [[#savehist][savehist]]
-  - [[#minad][minad]]
+  - [[#vertco][vert&co]]
     - [[#vertico][vertico]]
     - [[#consult][consult]]
     - [[#marginalia][marginalia]]
+    - [[#embark][embark]]
   - [[#projectile][projectile]]
   - [[#eshell][eshell]]
   - [[#languages][languages]]
@@ -484,7 +485,7 @@ toc-org, for the table of contents in this file
     (savehist-mode))
 #+end_src
 
-** minad
+** vert&co
 Install everything minad has written
 
 *** vertico
@@ -509,6 +510,7 @@ ok this one is not minad but it's his rec
 *** consult
 #+begin_src emacs-lisp
   (use-package consult
+    :demand t
     :general
     (spc-b
       "b" 'consult-buffer)
@@ -520,7 +522,12 @@ ok this one is not minad but it's his rec
     ;;"tp" 'consult-yank-from-kill-ring
 
     :config
-    (setq consult-narrow-key "<")
+    (setq consult-narrow-key "<"
+          completion-in-region-function (lambda (&rest args)
+                                          (apply (if vertico-mode
+                                                     #'consult-completion-in-region
+                                                   #'completion--in-region)
+                                                 args)))
     )
 #+end_src
 
@@ -530,6 +537,16 @@ marginalia enables richer annotations in the minibuffer
   (use-package marginalia
     :init
     (marginalia-mode))
+#+end_src
+
+*** embark
+#+begin_src emacs-lisp
+  (use-package embark-consult)
+
+  (use-package embark
+    :after embark-consult
+    :bind
+    (("C-." . embark-act)))
 #+end_src
 
 ** projectile
