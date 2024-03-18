@@ -27,9 +27,14 @@
 
 (setq package-enable-at-startup nil)
 
-(push '(menu-bar-lines . 0) default-frame-alist)
-(push '(tool-bar-lines . 0) default-frame-alist)
-(push '(vertical-scroll-bars) default-frame-alist)
+(setq initial-frame-alist
+      '(
+        (background-color . "#000000")
+        (menu-bar-lines . 0)))
+
+(menu-bar-mode -1)
+(scroll-bar-mode -1)
+(tool-bar-mode -1)
 
 (setq ring-bell-function #'ignore
       inhibit-startup-screen t)

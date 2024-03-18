@@ -100,9 +100,14 @@ Disable package.el, we'll use elpaca
 **** ui
 Disable UI stuff. Doing it here keeps it from flashing on startup
 #+begin_src emacs-lisp
-  (push '(menu-bar-lines . 0) default-frame-alist)
-  (push '(tool-bar-lines . 0) default-frame-alist)
-  (push '(vertical-scroll-bars) default-frame-alist)
+  (setq initial-frame-alist
+        '(
+          (background-color . "#000000")
+          (menu-bar-lines . 0)))
+
+  (menu-bar-mode -1)
+  (scroll-bar-mode -1)
+  (tool-bar-mode -1)
 #+end_src
 
 Disable the fucking bell too
@@ -371,6 +376,7 @@ create spc-menu! to ease the creation of nested menu bindings
     :custom-face
     (mode-line-active ((t (:box (:line-width 4 :color "#2a2a75")))))
     (mode-line-inactive ((t (:box (:line-width 4 :color "#2b2b2b")))))
+    (mouse ((t (:background "#ff76ff"))))
     )
 #+end_src
 
