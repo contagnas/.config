@@ -570,10 +570,50 @@ marginalia enables richer annotations in the minibuffer
         (erase-buffer)
         (eshell-send-input)))
 
-    :config
-    (spc
-      :no-autoload t
-      "e" '(eshell :wk)))
+    (defvar command-datetime-format "%Y-%m-%d %H:%M:%S")
+
+    (defun command-datetime-string () (format-time-string command-datetime-format))
+
+    (defun set-output-buffer-name (args)
+      "Wraps `async-shell-command` to use a more informative output-buffer name"
+      (let* ((command (car args))
+             (time (command-datetime-string))
+             (output-buffer (concat "*Shell [" time "] (Running) " command)))
+        (list command output-buffer)))
+
+    (defun process-callback (buffer process signal)
+      (when (memq (process-status process) '(exit signal))
+        (message "Do something!")
+        (with-current-buffer buffer
+          (rename-buffer (string-replace
+                          "(Running)"
+                          (concat "(Exit " (number-to-string (process-exit-status process)) ")")
+                          (buffer-name)))
+          (insert (propertize
+                   (concat "\n~\n"
+                           "~ Exited at " (command-datetime-string))
+                   'font-lock-face 'font-lock-comment-face)))
+        (shell-command-sentinel process signal)))
+
+    (defun add-info-after-exit (orig-fun &rest args)
+      (let* ((window (apply orig-fun args))
+             (buffer (window-buffer window))
+             (proc (get-buffer-process buffer)))
+        (progn
+          (when (process-live-p proc)
+            (set-process-sentinel proc (apply-partially 'process-callback buffer)))
+          window)))
+
+
+    (advice-add 'async-shell-command :filter-args 'set-output-buffer-name)
+    (advice-add 'async-shell-command :around 'add-info-after-exit)
+
+    :general
+    (spc-menu! "buffer" "s"
+      "e" 'eshell
+      "s" 'async-shell-command
+      )
+    )
 
 #+end_src
 ** languages
