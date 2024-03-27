@@ -43,6 +43,7 @@
     - [[#gleam][gleam]]
     - [[#rust][rust]]
     - [[#nix][nix]]
+    - [[#yaml][yaml]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
 
@@ -84,7 +85,6 @@ Reset init values after elpaca has loaded
           gc-cons-percentage 0.1
           gc-cons-threshold 100000000
           warning-minimum-level :warning)
-         (message "gc-cons-threshold")
          (when (boundp 'after-focus-change-function)
            (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
@@ -655,6 +655,11 @@ Tree sitter list and installs. Items are added in language blocks. See https://w
 #+begin_src emacs-lisp
   (use-package nix-mode
     )
+#+end_src
+
+*** yaml
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (yaml "https://github.com/ikatyang/tree-sitter-yaml")
 #+end_src
 
 * refs

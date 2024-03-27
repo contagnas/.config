@@ -18,7 +18,6 @@
       gc-cons-percentage 0.1
       gc-cons-threshold 100000000
       warning-minimum-level :warning)
-     (message "gc-cons-threshold")
      (when (boundp 'after-focus-change-function)
        (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
