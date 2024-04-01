@@ -3,3 +3,5 @@
 !emacs/readme.org
 !.gitignore
 /emacs
+!home-manager
+!nix-darwin
