@@ -296,6 +296,11 @@ create spc-menu! to ease the creation of nested menu bindings
 
 **** files
 #+begin_src emacs-lisp 
+  (defun save-buffer-and-kill ()
+      (interactive)
+    (save-buffer)
+    (kill-current-buffer))
+
   (spc-menu! "file" "f"
     "d"   '((lambda (&optional arg)
               (interactive "P")
@@ -315,7 +320,8 @@ create spc-menu! to ease the creation of nested menu bindings
     "R"   'rename-file-and-buffer
     "s"   'save-buffer
     "v"   'find-variable-at-point
-    "V"   'find-variable)
+    "V"   'find-variable
+    "q"   'save-buffer-and-kill)
 #+end_src
 
 **** windows
@@ -547,6 +553,8 @@ marginalia enables richer annotations in the minibuffer
     :after embark-consult
     :bind
     (("C-." . embark-act)))
+
+  (use-package wgrep)
 #+end_src
 
 ** projectile
@@ -583,7 +591,6 @@ marginalia enables richer annotations in the minibuffer
 
     (defun process-callback (buffer process signal)
       (when (memq (process-status process) '(exit signal))
-        (message "Do something!")
         (with-current-buffer buffer
           (rename-buffer (string-replace
                           "(Running)"
@@ -631,9 +638,24 @@ Tree sitter list and installs. Items are added in language blocks. See https://w
   (mapc #'treesit-install-if-missing (mapcar #'car treesit-language-source-alist))
 #+end_src
 
+Install combobulate
+#+begin_src emacs-lisp
+#+end_src
+
+
 *** scala
 #+begin_src emacs-lisp
-  (use-package scala-mode)
+  (use-package scala-mode
+    :interpreter
+    ("scala" . scala-mode))
+  (use-package lsp-mode)
+  (use-package lsp-metals)
+  (use-package lsp-ui)
+  (use-package scala-ts-mode)
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (scala "https://github.com/tree-sitter/tree-sitter-scala")
 #+end_src
 
 *** bazel
