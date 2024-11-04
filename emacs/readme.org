@@ -21,6 +21,7 @@
       - [[#project][project]]
       - [[#quit][quit]]
       - [[#vim-completion][vim completion]]
+      - [[#backup-files][backup files]]
   - [[#theme][theme]]
   - [[#evil][evil]]
     - [[#evil-collection][evil-collection]]
@@ -38,12 +39,13 @@
   - [[#projectile][projectile]]
   - [[#eshell][eshell]]
   - [[#languages][languages]]
-    - [[#scala][scala]]
     - [[#bazel][bazel]]
     - [[#gleam][gleam]]
     - [[#rust][rust]]
     - [[#nix][nix]]
     - [[#yaml][yaml]]
+    - [[#cue][cue]]
+  - [[#envrc][envrc]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
 
@@ -375,6 +377,13 @@ create spc-menu! to ease the creation of nested menu bindings
     :prefix "C-x")
 #+end_src
 
+**** backup files
+#+begin_src emacs-lisp
+  (defvar --backup-directory (concat user-emacs-directory "backups"))
+  (if (not (file-exists-p --backup-directory))
+      (make-directory --backup-directory t))
+  (setq backup-directory-alist `(("." . ,--backup-directory)))
+#+end_src
 ** theme
 #+begin_src emacs-lisp
   (use-package ef-themes
@@ -568,6 +577,64 @@ marginalia enables richer annotations in the minibuffer
       "f" 'consult-projectile))
 #+end_src
 ** eshell
+Show the current directory when inputting command
+#+begin_src emacs-lisp
+  (setq shell-command-prompt-show-cwd t)
+#+end_src
+Give *Shell* buffers a more informative name
+#+begin_src emacs-lisp
+  (defvar command-datetime-format "%Y-%m-%d %H:%M:%S")
+
+  (defun command-datetime-string () (format-time-string command-datetime-format))
+
+  (defun set-output-buffer-name (args)
+    "Wraps `async-shell-command` to use a more informative output-buffer name"
+    (let* ((command (car args))
+           (time (command-datetime-string))
+           (output-buffer (concat "*Shell [" time "] (Running) " command)))
+      (list command output-buffer)))
+
+  (advice-add 'async-shell-command :filter-args 'set-output-buffer-name)
+#+end_src
+
+After process has exited, rename the buffer with the exit code and put some metadata about when it exited in the buffer
+#+begin_src emacs-lisp
+  (defun process-callback (buffer process signal)
+    (when (memq (process-status process) '(exit signal))
+      (with-current-buffer buffer
+        (rename-buffer (string-replace
+                        "(Running)"
+                        (concat "(Exit " (number-to-string (process-exit-status process)) ")")
+                        (buffer-name)))
+        (insert (propertize
+                 (concat "\n~\n"
+                         "~ Exited at " (command-datetime-string))
+                 'font-lock-face 'font-lock-comment-face)))
+      (shell-command-sentinel process signal)))
+
+  (defun add-info-after-exit (orig-fun &rest args)
+    (let* ((window (apply orig-fun args))
+           (buffer (window-buffer window))
+           (proc (get-buffer-process buffer)))
+      (progn
+        (when (process-live-p proc)
+          (set-process-sentinel proc (apply-partially 'process-callback buffer)))
+        window)))
+
+
+  (advice-add 'async-shell-command :around 'add-info-after-exit)
+#+end_src
+
+Switch to the shell window after starting a command and switch to normal mode
+#+begin_src emacs-lisp
+  (defun select-window-normal-mode (window)
+    (select-window window)
+    (when bound-and-true-p evil-mode
+          (evil-normal-state nil)))
+(advice-add 'async-shell-command :filter-return 'select-window-normal-mode)
+    #+end_src
+
+Keybinds
 #+begin_src emacs-lisp
   (use-feature eshell
     :preface
@@ -578,47 +645,10 @@ marginalia enables richer annotations in the minibuffer
         (erase-buffer)
         (eshell-send-input)))
 
-    (defvar command-datetime-format "%Y-%m-%d %H:%M:%S")
-
-    (defun command-datetime-string () (format-time-string command-datetime-format))
-
-    (defun set-output-buffer-name (args)
-      "Wraps `async-shell-command` to use a more informative output-buffer name"
-      (let* ((command (car args))
-             (time (command-datetime-string))
-             (output-buffer (concat "*Shell [" time "] (Running) " command)))
-        (list command output-buffer)))
-
-    (defun process-callback (buffer process signal)
-      (when (memq (process-status process) '(exit signal))
-        (with-current-buffer buffer
-          (rename-buffer (string-replace
-                          "(Running)"
-                          (concat "(Exit " (number-to-string (process-exit-status process)) ")")
-                          (buffer-name)))
-          (insert (propertize
-                   (concat "\n~\n"
-                           "~ Exited at " (command-datetime-string))
-                   'font-lock-face 'font-lock-comment-face)))
-        (shell-command-sentinel process signal)))
-
-    (defun add-info-after-exit (orig-fun &rest args)
-      (let* ((window (apply orig-fun args))
-             (buffer (window-buffer window))
-             (proc (get-buffer-process buffer)))
-        (progn
-          (when (process-live-p proc)
-            (set-process-sentinel proc (apply-partially 'process-callback buffer)))
-          window)))
-
-
-    (advice-add 'async-shell-command :filter-args 'set-output-buffer-name)
-    (advice-add 'async-shell-command :around 'add-info-after-exit)
-
     :general
     (spc-menu! "buffer" "s"
       "e" 'eshell
-      "s" 'async-shell-command
+      "s" '(switch-to-buffer (async-shell-command))
       )
     )
 
@@ -636,27 +666,16 @@ Tree sitter list and installs. Items are added in language blocks. See https://w
       (treesit-install-language-grammar lang)))
 
   (mapc #'treesit-install-if-missing (mapcar #'car treesit-language-source-alist))
-#+end_src
 
-Install combobulate
-#+begin_src emacs-lisp
-#+end_src
-
-
-*** scala
-#+begin_src emacs-lisp
-  (use-package scala-mode
-    :interpreter
-    ("scala" . scala-mode))
-  (use-package lsp-mode)
-  (use-package lsp-metals)
-  (use-package lsp-ui)
-  (use-package scala-ts-mode)
-#+end_src
-
-#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
-  (scala "https://github.com/tree-sitter/tree-sitter-scala")
-#+end_src
+  (setq major-mode-remap-alist
+        '((yaml-mode . yaml-ts-mode)
+          (bash-mode . bash-ts-mode)
+          (js2-mode . js-ts-mode)
+          (typescript-mode . typescript-ts-mode)
+          (json-mode . json-ts-mode)
+          (css-mode . css-ts-mode)
+          (python-mode . python-ts-mode)))
+      #+end_src
 
 *** bazel
 #+begin_src emacs-lisp
@@ -669,10 +688,9 @@ Install combobulate
 #+end_src
 
 *** rust
-#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
-  (rust "https://github.com/tree-sitter/tree-sitter-rust")
+#+begin_src emacs-lisp
+  (use-package rust-mode)
 #+end_src
-
 *** nix
 #+begin_src emacs-lisp
   (use-package nix-mode
@@ -682,6 +700,21 @@ Install combobulate
 *** yaml
 #+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
   (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+#+end_src
+#+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
+#+end_src
+*** cue
+#+begin_src emacs-lisp
+  (use-package cue-mode
+    )
+#+end_src
+** envrc
+Intall envrc-mode and load it after init (per docs)
+
+#+begin_src emacs-lisp
+  (use-package envrc
+    :hook (after-init . envrc-global-mode))
 #+end_src
 
 * refs
