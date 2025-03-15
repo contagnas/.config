@@ -22,12 +22,12 @@
       - [[#quit][quit]]
       - [[#vim-completion][vim completion]]
       - [[#backup-files][backup files]]
-  - [[#theme][theme]]
   - [[#evil][evil]]
     - [[#evil-collection][evil-collection]]
     - [[#evil-surround][evil-surround]]
   - [[#which-key][which-key]]
   - [[#emacs][emacs]]
+    - [[#ansi-mode][ansi-mode]]
   - [[#magit][magit]]
   - [[#org][org]]
   - [[#savehist][savehist]]
@@ -36,15 +36,21 @@
     - [[#consult][consult]]
     - [[#marginalia][marginalia]]
     - [[#embark][embark]]
+    - [[#corfu][corfu]]
   - [[#projectile][projectile]]
   - [[#eshell][eshell]]
+    - [[#eat][eat]]
   - [[#languages][languages]]
     - [[#bazel][bazel]]
     - [[#gleam][gleam]]
     - [[#rust][rust]]
     - [[#nix][nix]]
     - [[#yaml][yaml]]
+    - [[#scala][scala]]
     - [[#cue][cue]]
+    - [[#gleam-1][gleam]]
+    - [[#python-][python :(]]
+    - [[#tsx][tsx]]
   - [[#envrc][envrc]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
@@ -79,19 +85,19 @@ Disable GC during startup
 Reset init values after elpaca has loaded
 
 #+begin_src emacs-lisp
-    (defun +reset-init-values ()
-      (run-with-idle-timer
-       1 nil
-       (lambda ()
-         (setq ;;file-name-handler-alist default-file-name-handler-alist
-          gc-cons-percentage 0.1
-          gc-cons-threshold 100000000
-          warning-minimum-level :warning)
-         (when (boundp 'after-focus-change-function)
-           (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
+  (defun +reset-init-values ()
+    (run-with-idle-timer
+     1 nil
+     (lambda ()
+       (setq ;;file-name-handler-alist default-file-name-handler-alist
+        gc-cons-percentage 0.1
+        gc-cons-threshold 100000000
+        warning-minimum-level :warning)
+       (when (boundp 'after-focus-change-function)
+         (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
 
-    (with-eval-after-load 'elpaca
-      (add-hook 'elpaca-after-init-hook '+reset-init-values))
+  (with-eval-after-load 'elpaca
+    (add-hook 'elpaca-after-init-hook '+reset-init-values))
 #+end_src
 
 **** package.el
@@ -299,7 +305,7 @@ create spc-menu! to ease the creation of nested menu bindings
 **** files
 #+begin_src emacs-lisp 
   (defun save-buffer-and-kill ()
-      (interactive)
+    (interactive)
     (save-buffer)
     (kill-current-buffer))
 
@@ -384,17 +390,23 @@ create spc-menu! to ease the creation of nested menu bindings
       (make-directory --backup-directory t))
   (setq backup-directory-alist `(("." . ,--backup-directory)))
 #+end_src
-** theme
+**
+
 #+begin_src emacs-lisp
-  (use-package ef-themes
-    :init
-    (load-theme 'ef-dark t)
-    :custom-face
-    (mode-line-active ((t (:box (:line-width 4 :color "#2a2a75")))))
-    (mode-line-inactive ((t (:box (:line-width 4 :color "#2b2b2b")))))
-    (mouse ((t (:background "#ff76ff"))))
-    )
+    ;;  (use-package ef-themes
+    ;;    :init
+    ;;    (load-theme 'ef-dark t)
+    ;;    :custom-face
+    ;;    (mode-line-active ((t (:box (:line-width 4 :color "#2a2a75")))))
+    ;;    (mode-line-inactive ((t (:box (:line-width 4 :color "#2b2b2b")))))
+    ;;    (mouse ((t (:background "#ff76ff"))))
+    ;;    )
+(let ((bg-active (face-attribute 'mode-line :background nil 'default))
+      (bg-inactive (face-attribute 'mode-line-inactive :background nil 'default)))
+  (set-face-attribute 'mode-line nil :box `(:line-width 4 :color ,bg-active))
+  (set-face-attribute 'mode-line-inactive nil :box `(:line-width 4 :color ,bg-inactive)))
 #+end_src
+
 
 ** evil
 Install evil and related packages
@@ -471,6 +483,15 @@ Install evil and related packages
     (completion-styles '(flex basic partial-completion emacs22))
     (blink-cursor-mode nil)
     )
+#+end_src
+
+*** ansi-mode
+This makes compliation buffers under things like cargo and sbt pretty instead of filled with garbage ansi control characters
+#+begin_src emacs-lisp
+  (require 'ansi-color)
+  (defun colorize-compilation-buffer ()
+    (ansi-color-apply-on-region compilation-filter-start (point)))
+  (add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
 #+end_src
 
 ** magit
@@ -566,6 +587,30 @@ marginalia enables richer annotations in the minibuffer
   (use-package wgrep)
 #+end_src
 
+*** corfu
+#+begin_src emacs-lisp
+  (use-package corfu
+    ;; Optional customizations
+    :custom
+    ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+
+    ;; Enable Corfu only for certain modes. See also `global-corfu-modes'.
+    ;; :hook ((prog-mode . corfu-mode)
+    ;;        (shell-mode . corfu-mode)
+    ;;        (eshell-mode . corfu-mode))
+
+    ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
+    ;; be used globally (M-/).  See also the customization variable
+    ;; `global-corfu-modes' to exclude certain modes.
+    :init
+    (global-corfu-mode))
+#+end_src
 ** projectile
 #+begin_src emacs-lisp
   (use-package projectile)
@@ -631,8 +676,8 @@ Switch to the shell window after starting a command and switch to normal mode
     (select-window window)
     (when bound-and-true-p evil-mode
           (evil-normal-state nil)))
-(advice-add 'async-shell-command :filter-return 'select-window-normal-mode)
-    #+end_src
+  (advice-add 'async-shell-command :filter-return 'select-window-normal-mode)
+#+end_src
 
 Keybinds
 #+begin_src emacs-lisp
@@ -652,6 +697,35 @@ Keybinds
       )
     )
 
+#+end_src
+
+Make the pwd part of the prompt match the color of the cursor
+#+begin_src emacs-lisp
+(defun eshell-prompt ()
+  "Custom Eshell prompt with PWD in the cursor's color."
+  (let ((pwd-color (face-attribute 'cursor :background nil 'default))) ;; Get cursor color
+    (concat
+     (propertize (eshell/pwd) 'face `(:foreground ,pwd-color)) ;; Apply color
+     (propertize " $ " 'face 'default)))) ;; Normal prompt symbol
+
+(setq eshell-prompt-function #'eshell-prompt)
+(setq eshell-highlight-prompt nil) ;; Avoid double styling
+#+end_src
+*** eat
+#+begin_src emacs-lisp
+  (use-package eat
+  :elpaca (eat :type git
+         :host codeberg
+         :repo "akib/emacs-eat"
+         :files ("*.el" ("term" "term/*.el") "*.texi"
+                 "*.ti" ("terminfo/e" "terminfo/e/*")
+                 ("terminfo/65" "terminfo/65/*")
+                 ("integration" "integration/*")
+                 (:exclude ".dir-locals.el" "*-tests.el")))
+  :config
+
+  :hook (eshell-load-hook . eat-eshell-mode)
+  )
 #+end_src
 ** languages
 Tree sitter list and installs. Items are added in language blocks. See https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
@@ -674,8 +748,9 @@ Tree sitter list and installs. Items are added in language blocks. See https://w
           (typescript-mode . typescript-ts-mode)
           (json-mode . json-ts-mode)
           (css-mode . css-ts-mode)
+          (gleam-mode . gleam-ts-mode)
           (python-mode . python-ts-mode)))
-      #+end_src
+#+end_src
 
 *** bazel
 #+begin_src emacs-lisp
@@ -704,17 +779,107 @@ Tree sitter list and installs. Items are added in language blocks. See https://w
 #+begin_src emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
 #+end_src
+*** scala
+#+begin_src emacs-lisp
+  (use-package scala-mode)
+#+end_src
 *** cue
 #+begin_src emacs-lisp
   (use-package cue-mode
     )
 #+end_src
+
+*** gleam
+#+begin_src emacs-lisp
+  (use-package gleam-ts-mode
+    :elpaca (gleam-ts-mode :host github :repo "gleam-lang/gleam-mode")
+    )
+#+end_src
+
+*** python :(
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (python "https://github.com/tree-sitter/tree-sitter-python")
+   #+end_src
+   
+Random code from the internet https://mclare.blog/posts/using-uv-in-emacs/
+#+begin_src emacs-lisp
+  (defun uv-activate ()
+    "Activate Python environment managed by uv based on current project directory.
+  Looks for .venv directory in project root and activates the Python interpreter."
+    (interactive)
+    (let* ((project-root (project-root (project-current t)))
+           (venv-path (expand-file-name ".venv" project-root))
+           (python-path (expand-file-name
+                         (if (eq system-type 'windows-nt)
+                             "Scripts/python.exe"
+                           "bin/python")
+                         venv-path)))
+      (if (file-exists-p python-path)
+          (progn
+            ;; Set Python interpreter path
+            (setq python-shell-interpreter python-path)
+
+            ;; Update exec-path to include the venv's bin directory
+            (let ((venv-bin-dir (file-name-directory python-path)))
+              (setq exec-path (cons venv-bin-dir
+                                    (remove venv-bin-dir exec-path))))
+
+            ;; Update PATH environment variable
+            (setenv "PATH" (concat (file-name-directory python-path)
+                                   path-separator
+                                   (getenv "PATH")))
+
+            ;; Update VIRTUAL_ENV environment variable
+            (setenv "VIRTUAL_ENV" venv-path)
+
+            ;; Remove PYTHONHOME if it exists
+            (setenv "PYTHONHOME" nil)
+
+            (message "Activated UV Python environment at %s" venv-path))
+        (error "No UV Python environment found in %s" project-root))))
+#+end_src
+   
+*** tsx
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package tide
+    :config
+    (defun setup-tide-mode ()
+      (interactive)
+      (tide-setup)
+      (flycheck-mode +1)
+      (setq flycheck-check-syntax-automatically '(save mode-enabled))
+      (eldoc-mode +1)
+      (tide-hl-identifier-mode +1)
+      ;; company is an optional dependency. You have to
+      ;; install it separately via package-install
+      ;; `M-x package-install [ret] company`
+      ))
+
+  (add-hook 'tsx-ts-mode-hook #'setup-tide-mode)
+
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
+#+end_src
+
 ** envrc
 Intall envrc-mode and load it after init (per docs)
 
 #+begin_src emacs-lisp
   (use-package envrc
-    :hook (after-init . envrc-global-mode))
+    :hook (after-init . envrc-global-mode)
+    :config (envrc-global-mode 1))
+#+end_src
+
+
+Sometimes need direnv-mode if you want it to be more global. Don't enable by default
+#+begin_src emacs-lisp
+  (use-package direnv
+    :config
+    ;; (direnv-mode)
+    )
 #+end_src
 
 * refs
