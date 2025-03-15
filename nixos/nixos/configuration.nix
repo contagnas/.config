@@ -11,6 +11,18 @@
 
   musnix.enable = true;
 
+  stylix.enable = true;
+  # stylix.targets.cavalier.enable  = false;
+  stylix.polarity = "dark";
+  stylix.base16Scheme = "${pkgs.base16-schemes}/share/themes/chalk.yaml";
+  stylix.image = ../wallpaper.png;
+
+  # stylix.image = pkgs.fetchurl {
+  #   url = "https://www.pixelstalk.net/wp-content/uploads/2016/05/Epic-Anime-Awesome-Wallpapers.jpg";
+  #   sha256 = "enQo3wqhgf0FEPHj2coOCvo7DuZv+x5rL/WIo4qPI50=";
+  # };
+
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.supportedFilesystems = ["ntfs"];
@@ -18,6 +30,8 @@
     "cgroup_enable=memory"
     "cgroup_enable=cpuset"
     "cgroup_memory=1"
+    "nvidia-drm.modeset=1"
+    "nvidia-drm.fbdev=1"
   ];
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
@@ -50,19 +64,8 @@
     settings.trusted-users = [ "root" "chills" ];
   };
 
-  services.xserver = {
-    enable = true;
-    videoDrivers = ["nvidia"];
-    autoRepeatDelay = 200;
-    autoRepeatInterval = 25;
-  };
-
-  services.libinput = {
-    enable = true;
-    mouse = {
-      accelProfile = "flat";
-    };
-  };
+  services.xserver.videoDrivers = ["nvidia"];
+  programs.niri.enable = true;
 
   hardware.nvidia = {
     # modesetting is required
@@ -91,10 +94,10 @@
 
     extraConfig.pipewire."92-low-latency" = {
       "context.properties" = {
-      "default.clock.rate" = 48000;
-      "default.clock.quantum" = 32;
-      "default.clock.min-quantum" = 32;
-      "default.clock.max-quantum" = 32;
+        "default.clock.rate" = 48000;
+        "default.clock.quantum" = 32;
+        "default.clock.min-quantum" = 32;
+        "default.clock.max-quantum" = 32;
       };
     };
   };
@@ -107,7 +110,7 @@
   networking.firewall.allowedTCPPorts = [ 6969 8080 8000 8980 ];
 
   environment.systemPackages = with pkgs; [
-    just
+    git
   ];
 
   system.stateVersion = "21.11";
