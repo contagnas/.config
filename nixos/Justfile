@@ -20,3 +20,6 @@ reload-waybar:
   pkill waybar || true
   waybar &
   disown
+
+nix-repl hostname=`hostname`:
+  nix repl ".#nixosConfigurations.\"{{hostname}}\""
