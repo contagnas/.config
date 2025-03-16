@@ -35,8 +35,6 @@
     ];
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
-    # custom packages
-    packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
     # `nix fmt`
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixos);
 
@@ -50,14 +48,14 @@
       nixos = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs outputs;};
         modules = [
-          ./nixos/configuration.nix
+          ./configuration.nix
           inputs.niri.nixosModules.niri
           inputs.stylix.nixosModules.stylix
           home-manager.nixosModules.home-manager {
             home-manager.backupFileExtension = "hmbak";
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.users.chills = import ./home-manager/home.nix;
+            home-manager.users.chills = import ./home.nix;
           }
         ];
       };
