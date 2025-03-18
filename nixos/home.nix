@@ -90,11 +90,11 @@
         "Mod+Shift+WheelScrollUp".action = focus-column-left;
         "Mod+Shift+WheelScrollDown".action = focus-column-right;
 
-        "Mod+R".action.spawn = "${pkgs.fuzzel}/bin/fuzzel";
-        "Mod+G".action.spawn = "${pkgs.google-chrome}/bin/google-chrome-stable";
+        "Mod+R".action.spawn = lib.getExe pkgs.fuzzel;
+        "Mod+G".action.spawn = lib.getExe pkgs.google-chrome;
         # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
-        "Mod+E".action.spawn = "${config.programs.emacs.finalPackage}/bin/emacs"; # need to use emacs-with-packages, not base emacs
-        "Mod+T".action.spawn = "${pkgs.alacritty}/bin/alacritty";
+        "Mod+E".action.spawn = lib.getExe config.programs.emacs.finalPackage; # need to use emacs-with-packages, not base emacs
+        "Mod+T".action.spawn = lib.getExe pkgs.alacritty;
 
         "Mod+V".action = toggle-window-floating;
       };
@@ -146,8 +146,8 @@
       animations.slowdown = 0.5;
 
       spawn-at-startup = [
-        { command = ["${pkgs.xwayland-satellite}/bin/xwayland-satellite" xwaylandPort]; }
-        { command = ["${pkgs.mako}/bin/mako"]; }
+        { command = [(lib.getExe pkgs.xwayland-satellite) xwaylandPort]; }
+        { command = [(lib.getExe pkgs.mako)]; }
       ];
 
       environment = {
