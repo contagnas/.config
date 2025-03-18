@@ -705,7 +705,7 @@ Make the pwd part of the prompt match the color of the cursor
   "Custom Eshell prompt with PWD in the cursor's color."
   (let ((pwd-color (face-attribute 'cursor :background nil 'default))) ;; Get cursor color
     (concat
-     (propertize (eshell/pwd) 'face `(:foreground ,pwd-color)) ;; Apply color
+     (propertize (abbreviate-file-name (eshell/pwd)) 'face `(:foreground ,pwd-color)) ;; Apply color
      (propertize " $ " 'face 'default)))) ;; Normal prompt symbol
 
 (setq eshell-prompt-function #'eshell-prompt)
