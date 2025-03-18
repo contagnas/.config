@@ -50,7 +50,7 @@
     extraOptions = ''
         experimental-features = nix-command flakes ca-derivations
     '';
-    package = pkgs.nixVersions.latest;
+    package = pkgs.nixVersions.nix_2_26;
     settings.trusted-users = [ "root" "chills" ];
   };
 
