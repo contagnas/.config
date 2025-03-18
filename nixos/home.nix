@@ -21,6 +21,7 @@
     discord
     steam
     just
+    spotify
 
     # fonts
     noto-fonts
@@ -77,7 +78,7 @@
         "Mod+Alt+L".action = set-column-width "+5%";
 
         "Mod+F".action = switch-preset-column-width;
-        "Mod+Shift+F".action = maximize-column;
+        "Mod+Shift+F".action = fullscreen-window;
         "Mod+C".action = center-column;
 
         "Mod+WheelScrollUp".action = focus-workspace-up;
