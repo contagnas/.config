@@ -14,14 +14,18 @@
   };
 
   home.packages = with pkgs; [
+    # apps
     google-chrome
-    ripgrep
-    fd
-    unzip
     discord
     steam
-    just
     spotify
+
+    # tools
+    just
+    ripgrep
+    fd
+    direnv
+    unzip
 
     # fonts
     noto-fonts
