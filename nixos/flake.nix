@@ -21,6 +21,11 @@
       # inputs.home-manager.follows = "home-manager";
     };
 
+    window-switcher = {
+      url = ./pkgs/window-switcher;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs = {
@@ -38,7 +43,6 @@
     # `nix fmt`
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixos);
 
-    # custom packages exported as overlays
     overlays = [inputs.niri.overlays.niri];
 
     # NixOS configuration entrypoint
@@ -55,7 +59,8 @@
             home-manager.backupFileExtension = "hmbak";
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.users.chills = import ./home.nix;
+            home-manager.users.chills = ./home.nix;
+            home-manager.extraSpecialArgs = {inherit inputs;};
           }
         ];
       };

@@ -14,6 +14,11 @@
         pname = "niri_fuzzel_switcher";
         version = "1.0";
 
+        meta = with pkgs.lib; {
+          description = "A window switcher tool using fuzzel";
+          mainProgram = "niri_fuzzel_switcher";
+        };
+
         src = ./.;
 
         nativeBuildInputs = [ pkgs.makeWrapper ];

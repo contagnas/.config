@@ -372,7 +372,8 @@
         "niri": "niri",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "stylix": "stylix"
+        "stylix": "stylix",
+        "window-switcher": "window-switcher"
       }
     },
     "stylix": {
@@ -472,6 +473,22 @@
         "repo": "tinted-tmux",
         "type": "github"
       }
+    },
+    "window-switcher": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "pkgs/window-switcher",
+        "type": "path"
+      },
+      "original": {
+        "path": "pkgs/window-switcher",
+        "type": "path"
+      },
+      "parent": []
     },
     "xwayland-satellite-stable": {
       "flake": false,
