@@ -27,6 +27,7 @@
     fd
     direnv
     unzip
+    jq
 
     # fonts
     noto-fonts
@@ -54,9 +55,12 @@
   programs.fuzzel.enable = true;
   programs.fuzzel.settings = {
     border.radius = "0";
+    main.dpi-aware = "no";
+    main.line-height = "16";
   };
 
   stylix.targets.niri.enable = true;
+  stylix.targets.mako.enable = true;
 
   stylix.fonts = {
     sansSerif = config.stylix.fonts.monospace;
