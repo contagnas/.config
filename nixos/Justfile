@@ -11,7 +11,7 @@ niri-reload hostname=`hostname` user=`whoami`:
   ln -sf ~/.config/niri/active-config.kdl ~/.config/niri/config.kdl
 
 niri-reload-watch:
-  echo "home-manager/home.nix" | nix run nixpkgs#entr -- just niri-reload
+  echo "home.nix" | nix run nixpkgs#entr -- just niri-reload
 
 reload-waybar:
   nix eval --quiet --json .#nixosConfigurations.nixos.config.home-manager.users.chills.programs.waybar.settings --apply builtins.attrValues > /tmp/waybar
