@@ -165,6 +165,8 @@
           width = 10000;
           active.color = "#00000055";
         };
+
+        empty-workspace-above-first = true;
       };
 
       animations.slowdown = 0.5;
