@@ -46,6 +46,9 @@
 
   programs.home-manager.enable = true;
   programs.alacritty.enable = true;
+  programs.foot.enable = true;
+  programs.htop.enable = true;
+  programs.nushell.enable = true;
   programs.emacs = {
     enable = true;
     # pgtk = pure gtk, has wayland support
@@ -53,6 +56,17 @@
   };
   programs.git.enable = true;
   programs.fuzzel.enable = true;
+  programs.fuzzel.package = (pkgs.fuzzel.overrideAttrs
+    (oldAttrs: rec {
+      src = pkgs.fetchFromGitea {
+        domain = "codeberg.org";
+        owner = "chills";
+        repo = "fuzzel";
+        rev = "1ec6cf21fe08e8a827e7501252ba9f37292ba969";
+        hash = "sha256-IDcIeJCXi2Q5x/lRzgKe/9Epeum0KZIGJlzNwPwnmXk=";
+      };
+    })
+  );
   programs.fuzzel.settings = {
     border.radius = "0";
     main.dpi-aware = "no";
@@ -61,6 +75,7 @@
 
   stylix.targets.niri.enable = true;
   stylix.targets.mako.enable = true;
+  stylix.targets.foot.enable = true;
 
   stylix.fonts = {
     sansSerif = config.stylix.fonts.monospace;
@@ -103,7 +118,7 @@
         "Mod+G".action.spawn = lib.getExe pkgs.google-chrome;
         # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
         "Mod+E".action.spawn = lib.getExe config.programs.emacs.finalPackage; # need to use emacs-with-packages, not base emacs
-        "Mod+T".action.spawn = lib.getExe pkgs.alacritty;
+        "Mod+T".action.spawn = lib.getExe pkgs.foot;
 
         "Mod+V".action = toggle-window-floating;
       };

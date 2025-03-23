@@ -51,6 +51,7 @@
     - [[#gleam-1][gleam]]
     - [[#python-][python :(]]
     - [[#tsx][tsx]]
+    - [[#nushell][nushell?]]
   - [[#envrc][envrc]]
 - [[#refs][refs]]
 - [[#org-settings][org settings]]
@@ -862,6 +863,11 @@ Random code from the internet https://mclare.blog/posts/using-uv-in-emacs/
   (add-hook 'tsx-ts-mode-hook #'setup-tide-mode)
 
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
+#+end_src
+
+*** nushell?
+#+begin_src emacs-lisp
+  (use-package nushell-mode)
 #+end_src
 
 ** envrc

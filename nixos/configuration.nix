@@ -95,6 +95,7 @@
   users.users.chills = {
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" "networkmanager" "podman" "audio"]; 
+    shell = pkgs.nushell;
   };
 
   networking.firewall.allowedTCPPorts = [ 6969 8080 8000 8980 ];
