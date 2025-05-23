@@ -115,12 +115,14 @@
 
         "Mod+R".action.spawn = lib.getExe pkgs.fuzzel;
         "Mod+W".action.spawn = lib.getExe inputs.window-switcher.defaultPackage.${system};
-        "Mod+G".action.spawn = lib.getExe pkgs.google-chrome;
+        "Mod+G".action.spawn = [(lib.getExe pkgs.google-chrome) "--remote-debugging-port=9222"];
+        "Mod+Ctrl+Tab".action.spawn = "~/chrome-tab-switcher.nu";
         # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
         "Mod+E".action.spawn = lib.getExe config.programs.emacs.finalPackage; # need to use emacs-with-packages, not base emacs
         "Mod+T".action.spawn = lib.getExe pkgs.foot;
 
         "Mod+V".action = toggle-window-floating;
+        "Mod+S".action = screenshot;
       };
 
       outputs."DP-1" = {
@@ -172,7 +174,13 @@
       animations.slowdown = 0.5;
 
       spawn-at-startup = [
-        { command = [(lib.getExe pkgs.xwayland-satellite) xwaylandPort]; }
+        {
+          command = [
+            "bash"
+            "-c"
+            "${lib.getExe pkgs.xwayland-satellite} ${xwaylandPort} &> ~/.xwayland-satellite.log"
+          ];
+        }
         { command = [(lib.getExe pkgs.mako)]; }
       ];
 
