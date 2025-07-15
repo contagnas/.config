@@ -845,6 +845,10 @@ Random code from the internet https://mclare.blog/posts/using-uv-in-emacs/
   (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
 #+end_src
 
+#+begin_src emacs-lisp :noweb-ref tree-sitter-mapping :tangle no
+  (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+#+end_src
+
 #+begin_src emacs-lisp
   (use-package tide
     :config
@@ -860,8 +864,11 @@ Random code from the internet https://mclare.blog/posts/using-uv-in-emacs/
       ;; `M-x package-install [ret] company`
       ))
 
-  (add-hook 'tsx-ts-mode-hook #'setup-tide-mode)
+  ;; (add-hook 'tsx-ts-mode-hook #'setup-tide-mode)
 
+  ;; Enable tsx-ts-mode for .ts, .tsx, and .bri files
+  (add-to-list 'major-mode-remap-alist '(typescript-mode . tsx-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . tsx-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
 #+end_src
 

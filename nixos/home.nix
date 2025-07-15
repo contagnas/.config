@@ -39,9 +39,12 @@
     jetbrains-mono
   ];
 
-  gtk.cursorTheme = {
-    package = pkgs.vanilla-dmz;
-    name = "Vanilla-DMZ";
+  home.pointerCursor = {
+    package = pkgs.bibata-cursors;
+    name = "Bibata-Modern-Classic";
+    size = 24;
+    # gtk.enable = true;
+    # x11.enable = true;
   };
 
   programs.home-manager.enable = true;
@@ -74,7 +77,7 @@
   };
 
   stylix.targets.niri.enable = true;
-  stylix.targets.mako.enable = true;
+  # stylix.targets.mako.enable = true;
   stylix.targets.foot.enable = true;
 
   stylix.fonts = {
@@ -106,7 +109,9 @@
 
         "Mod+F".action = switch-preset-column-width;
         "Mod+Shift+F".action = fullscreen-window;
+        "Mod+Ctrl+F".action = toggle-windowed-fullscreen;
         "Mod+C".action = center-column;
+        "Mod+Tab".action = toggle-overview;
 
         "Mod+WheelScrollUp".action = focus-workspace-up;
         "Mod+WheelScrollDown".action = focus-workspace-down;
@@ -146,7 +151,7 @@
             max-scroll-amount = "25%";
         };
 
-        warp-mouse-to-focus = true;
+        warp-mouse-to-focus = { enable = true; };
 
       };
 
@@ -181,7 +186,7 @@
             "${lib.getExe pkgs.xwayland-satellite} ${xwaylandPort} &> ~/.xwayland-satellite.log"
           ];
         }
-        { command = [(lib.getExe pkgs.mako)]; }
+        # { command = [(lib.getExe pkgs.mako)]; }
       ];
 
       environment = {
