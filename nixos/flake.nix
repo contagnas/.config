@@ -26,6 +26,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    musnix = {
+      url = "github:musnix/musnix";
+    };
+
   };
 
   outputs = {
@@ -61,6 +65,7 @@
             home-manager.users.chills = ./home.nix;
             home-manager.extraSpecialArgs = {inherit inputs;};
           }
+          inputs.musnix.nixosModules.musnix
         ];
       };
     };
