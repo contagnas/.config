@@ -50,7 +50,7 @@
     extraOptions = ''
         experimental-features = nix-command flakes ca-derivations dynamic-derivations
     '';
-    package = pkgs.nixVersions.nix_2_26;
+    package = pkgs.nixVersions.nix_2_28;
     settings.trusted-users = [ "root" "chills" ];
   };
 
@@ -60,7 +60,7 @@
   hardware.nvidia = {
     # modesetting is required
     modesetting.enable = true;
-    powerManagement.enable = false;
+    powerManagement.enable = true;
     powerManagement.finegrained = false;
     # do not use the nvidia open source kernel module 
     open = false;
