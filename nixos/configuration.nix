@@ -95,7 +95,31 @@
 
   environment.systemPackages = with pkgs; [
     git
+    alsa-utils
   ];
+
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2708", ATTRS{idProduct}=="0006", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="audient-restore.service", ENV{SYSTEMD_UID}="${toString config.users.users.chills.uid}"
+  '';
+
+  systemd.user.services.audient-restore = {
+    description = "Restore Audient EVO 4 ALSA settings";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${config.users.users.chills.home}/.config/alsa";
+      ExecStart = "${pkgs.alsa-utils}/bin/alsactl --file ${config.users.users.chills.home}/.config/alsa/audient-evo4.state restore EVO4";
+    };
+  };
+
+  systemd.user.services.audient-save = {
+    description = "Automatically save Audient EVO 4 ALSA settings";
+    serviceConfig = {
+      ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p ${config.users.users.chills.home}/.config/alsa";
+      ExecStart = "${pkgs.alsa-utils}/bin/alsactl --file ${config.users.users.chills.home}/.config/alsa/audient-evo4.state daemon EVO4";
+      Restart = "always";
+    };
+    wantedBy = [ "default.target" ];
+  };
 
   system.stateVersion = "21.11";
 }
