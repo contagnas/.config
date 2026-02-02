@@ -28,6 +28,7 @@
     direnv
     unzip
     jq
+    helvum
 
     # fonts
     noto-fonts
@@ -37,6 +38,7 @@
     dejavu_fonts
     font-awesome
     jetbrains-mono
+
   ];
 
   home.pointerCursor = {
@@ -195,9 +197,13 @@
         NIXOS_OZONE_WL = "1";
         MOZ_ENABLE_WAYLAND = "1";
         XDG_SESSION_TYPE = "wayland";
+        # xdg-desktop-portal-wlr recognizes wlroots compositors via XDG_CURRENT_DESKTOP/XDG_SESSION_DESKTOP;
+        # niri is not in its allowlist, so we spoof sway to ensure screencast works.
+        XDG_CURRENT_DESKTOP = "sway";
+        XDG_SESSION_DESKTOP = "sway";
         QT_QPA_PLATFORM = "wayland";
         GDK_BACKEND = "wayland";
-        SDL_VIDEODRIVER = "wayland";
+        # SDL_VIDEODRIVER = "wayland";
         GTK_THEME = "Adwaita:dark";
       };
 

@@ -22,6 +22,8 @@
     "cgroup_memory=1"
     "nvidia-drm.modeset=1"
     "nvidia-drm.fbdev=1"
+    # Preserve VRAM allocations across DPMS to avoid NVKMS allocation failures on wake.
+    "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
   ];
 
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
@@ -36,14 +38,17 @@
 
   time.timeZone = "America/Los_Angeles";
 
-  systemd.extraConfig = ''
-    DefaultTimeoutStopSec=10s
-  '';
+  systemd.settings = {
+    Manager = {
+      DefaultTimeoutStopSec = "10s";
+    };
+  };
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = false;
+  services.upower.enable = true;
   networking.interfaces.enp6s0.useDHCP = true;
 
   nix = {
@@ -85,13 +90,31 @@
     jack.enable = true;
   };
 
+  xdg.portal = {
+    enable = true;
+    wlr.enable = true;
+    extraPortals = [];
+    config.common = {
+      default = ["wlr"];
+      "org.freedesktop.impl.portal.ScreenCast" = ["wlr"];
+      "org.freedesktop.impl.portal.Screenshot" = ["wlr"];
+    };
+  };
+
   users.users.chills = {
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" "networkmanager" "podman" "audio"]; 
     shell = pkgs.nushell;
   };
 
-  networking.firewall.allowedTCPPorts = [ 6969 8080 8000 8980 ];
+  # xdg-desktop-portal-wlr expects a wlroots compositor name; use sway to avoid "niri" being rejected.
+  environment.sessionVariables = {
+    XDG_CURRENT_DESKTOP = "sway";
+    XDG_SESSION_DESKTOP = "sway";
+  };
+
+  networking.firewall.allowedTCPPorts = [ 6969 8080 8000 8980 9757 ];
+  networking.firewall.allowedUDPPorts = [ 5353 9757 ];
 
   environment.systemPackages = with pkgs; [
     git
