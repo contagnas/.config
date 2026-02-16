@@ -89,6 +89,7 @@
   systemd.user.services.noctalia-lock-on-start = {
     Unit = {
       Description = "Lock Noctalia on session start";
+      ConditionPathExists = "!%t/noctalia-lock-on-start.done";
       After = [
         config.wayland.systemd.target
         "noctalia-shell.service"
@@ -97,7 +98,7 @@
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash -lc 'for _ in $(seq 1 20); do noctalia-shell ipc call lockScreen lock && exit 0; sleep 0.5; done; exit 0'";
+      ExecStart = "${pkgs.bash}/bin/bash -lc 'for _ in $(seq 1 20); do ${lib.getExe config.programs.noctalia-shell.package} ipc call lockScreen lock && touch \"$XDG_RUNTIME_DIR/noctalia-lock-on-start.done\" && exit 0; sleep 0.5; done; exit 0'";
     };
     Install.WantedBy = [ config.wayland.systemd.target ];
   };
@@ -143,8 +144,20 @@
         "Mod+Shift+WheelScrollUp".action = focus-column-left;
         "Mod+Shift+WheelScrollDown".action = focus-column-right;
 
-        "Mod+R".action.spawn = lib.getExe pkgs.fuzzel;
-        "Mod+W".action.spawn = lib.getExe inputs.window-switcher.defaultPackage.${pkgs.stdenv.hostPlatform.system};
+        "Mod+R".action.spawn = [
+          (lib.getExe config.programs.noctalia-shell.package)
+          "ipc"
+          "call"
+          "launcher"
+          "toggle"
+        ];
+        "Mod+W".action.spawn = [
+          (lib.getExe config.programs.noctalia-shell.package)
+          "ipc"
+          "call"
+          "launcher"
+          "windows"
+        ];
         "Mod+G".action.spawn = [(lib.getExe pkgs.google-chrome) "--remote-debugging-port=9222"];
         "Mod+Ctrl+Tab".action.spawn = "~/chrome-tab-switcher.nu";
         # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
@@ -185,6 +198,7 @@
       layout = {
         gaps = 16;
         center-focused-column = "never";
+        "background-color" = "transparent";
 
         preset-column-widths = [
           { proportion = 0.25; }
@@ -199,6 +213,23 @@
         };
 
         empty-workspace-above-first = true;
+      };
+
+      "layer-rules" = [
+        {
+          matches = [
+            { namespace = "^noctalia-wallpaper*"; }
+          ];
+          "place-within-backdrop" = true;
+        }
+      ];
+
+      overview = {
+        "workspace-shadow".enable = false;
+      };
+
+      debug = {
+        "honor-xdg-activation-with-invalid-serial" = [ ];
       };
 
       animations.slowdown = 0.5;

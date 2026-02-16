@@ -283,19 +283,19 @@
   "clockFormat" = "hh\\nmm";
   "clockStyle" = "custom";
   "compactLockScreen" = false;
-  "dimmerOpacity" = 0.2;
+  "dimmerOpacity" = 0.0;
   "enableLockScreenCountdown" = true;
   "enableShadows" = true;
   "forceBlackScreenCorners" = false;
   "iRadiusRatio" = 1;
   "keybinds" = {
-  "keyDown" = [ "Down" ];
+  "keyDown" = [ "Down" "Ctrl+N" ];
   "keyEnter" = [ "Return" ];
-  "keyEscape" = [ "Esc" ];
+  "keyEscape" = [ "Esc" "Ctrl+G" ];
   "keyLeft" = [ "Left" ];
   "keyRemove" = [ "Del" ];
   "keyRight" = [ "Right" ];
-  "keyUp" = [ "Up" ];
+  "keyUp" = [ "Up" "Ctrl+P" ];
 };
   "language" = "";
   "lockOnSuspend" = true;
@@ -518,4 +518,3 @@
   "wallpaperChangeMode" = "random";
 };
 }
-
