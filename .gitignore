@@ -1,9 +1,8 @@
 /*
 !emacs
-!emacs/readme.org
-/emacs
+!emacs/**
 !.gitignore
 !home-manager
 !nix-darwin
-!nixos
+!nixos/**
 /nixos/result

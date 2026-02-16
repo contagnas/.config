@@ -61,46 +61,6 @@
     extraPackages = epkgs: [
       epkgs.filechooser
     ];
-    extraConfig = ''
-      (with-eval-after-load 'filechooser
-        (setq filechooser-use-popup-frame nil)
-        (defun chills/filechooser-open-with-dired (prompt &optional dir filters &rest _ignore)
-          (filechooser-with-dired prompt dir filters))
-        (defun chills/filechooser-open-multi-with-dired (prompt &optional dir filters &rest _ignore)
-          (filechooser-with-dired prompt dir filters))
-        (setq filechooser-choose-file #'chills/filechooser-open-with-dired)
-        (setq filechooser-choose-files #'chills/filechooser-open-multi-with-dired)
-        (defun chills/filechooser-wrap-request (orig &rest args)
-          (let* ((display (or (getenv "WAYLAND_DISPLAY") (getenv "DISPLAY")))
-                 (bg (or (face-background 'default nil t) "#1e1e1e"))
-                 (fg (or (face-foreground 'default nil t) "#ffffff"))
-                 (params `((name . "filechooser-frame")
-                           (minibuffer . t)
-                           (width . 120)
-                           (height . 36)
-                           (background-color . ,bg)
-                           (foreground-color . ,fg)))
-                 (frame
-                  (cond
-                   ((and display (fboundp 'make-frame-on-display))
-                    (make-frame-on-display display params))
-                   (display
-                    (make-frame (append params (list (cons 'display display)))))
-                   (t
-                    (make-frame params)))))
-            (unwind-protect
-                (with-selected-frame frame
-                  (raise-frame frame)
-                  (select-frame-set-input-focus frame)
-                  (apply orig args))
-              (when (frame-live-p frame)
-                (delete-frame frame t)))))
-        (dolist (fn '(filechooser-handle-open-file
-                      filechooser-handle-save-file
-                      filechooser-handle-save-files))
-          (unless (advice-member-p #'chills/filechooser-wrap-request fn)
-            (advice-add fn :around #'chills/filechooser-wrap-request))))
-    '';
   };
   services.emacs = {
     enable = true;
@@ -213,8 +173,11 @@
         ];
         "Mod+G".action.spawn = [(lib.getExe pkgs.google-chrome) "--remote-debugging-port=9222"];
         "Mod+Ctrl+Tab".action.spawn = "${config.home.homeDirectory}/chrome-tab-switcher.nu";
-        # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
-        "Mod+E".action.spawn = lib.getExe config.programs.emacs.finalPackage; # need to use emacs-with-packages, not base emacs
+        "Mod+E".action.spawn = [
+          (lib.getExe' config.programs.emacs.finalPackage "emacsclient")
+          "-c"
+          "-n"
+        ];
         "Mod+T".action.spawn = lib.getExe pkgs.foot;
 
         "Mod+V".action = toggle-window-floating;
@@ -284,15 +247,6 @@
             {
               "app-id" = "^emacs$";
               title = "^filechooser-frame$";
-            }
-          ];
-          "open-floating" = true;
-        }
-        {
-          matches = [
-            {
-              "app-id" = "^emacs$";
-              title = "^filechooser-miniframe$";
             }
           ];
           "open-floating" = true;
