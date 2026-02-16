@@ -13,6 +13,9 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    niri-local = {
+      url = "path:/home/chills/niri";
+    };
 
     stylix = {
       url = "github:danth/stylix";
@@ -45,7 +48,7 @@
   in {
     # `nix fmt`
 
-    overlays.default = inputs.niri.overlays.niri;
+    overlays.default = inputs.niri-local.overlays.default;
 
     # NixOS configuration entrypoint
     # Available through 'nixos-rebuild --flake .'
@@ -54,6 +57,9 @@
       nixos = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs outputs;};
         modules = [
+          {
+            nixpkgs.overlays = [ outputs.overlays.default ];
+          }
           ./configuration.nix
           inputs.niri.nixosModules.niri
           inputs.stylix.nixosModules.stylix
