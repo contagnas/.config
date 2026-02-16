@@ -7,6 +7,21 @@
 (defvar chills/command-datetime-format "%Y-%m-%d %H:%M:%S"
   "Timestamp format used in async shell command buffer names.")
 
+(defvar-local chills/async-shell-command nil
+  "Command string used to create the current async shell command buffer.")
+
+(defvar-local chills/async-shell-command-directory nil
+  "Working directory used to create the current async shell command buffer.")
+
+(defvar chills/async-shell-command-preserve-window nil
+  "When non-nil, keep `async-shell-command' from selecting output windows.")
+
+(defvar chills/last-async-shell-command-buffer nil
+  "Most recently created async shell command output buffer.")
+
+(defvar chills/last-async-shell-command-output-buffer-name nil
+  "Most recently generated async shell output buffer name.")
+
 (defun chills/command-datetime-string ()
   "Return the current timestamp string."
   (format-time-string chills/command-datetime-format))
@@ -16,7 +31,8 @@
   (let* ((command (car args))
          (time (chills/command-datetime-string))
          (output-buffer (concat "*Shell [" time "] (Running) " command)))
-    (list command output-buffer)))
+    (setq chills/last-async-shell-command-output-buffer-name output-buffer)
+    (list command output-buffer (nth 2 args))))
 
 (defun chills/process-callback (buffer process signal)
   "Handle PROCESS exit in BUFFER, then pass SIGNAL to `shell-command-sentinel'."
@@ -33,20 +49,61 @@
                'font-lock-face 'font-lock-comment-face)))
     (shell-command-sentinel process signal)))
 
+(defun chills/async-shell-command-rerun (&optional keep-old)
+  "Re-run command for current async shell buffer.
+With prefix argument KEEP-OLD, keep the current buffer.
+Without KEEP-OLD, delete the current buffer after switching to the new run."
+  (interactive "P")
+  (unless chills/async-shell-command
+    (user-error "No async shell command recorded for this buffer"))
+  (let ((old-buffer (current-buffer))
+        (target-window (selected-window))
+        (default-directory (or chills/async-shell-command-directory default-directory))
+        (chills/async-shell-command-preserve-window t)
+        (chills/last-async-shell-command-buffer nil)
+        (display-buffer-overriding-action
+         '((display-buffer-no-window) (allow-no-window . t)))
+        (async-shell-command-display-buffer t))
+    (async-shell-command chills/async-shell-command)
+    (when (and (window-live-p target-window)
+               (buffer-live-p chills/last-async-shell-command-buffer))
+      (set-window-buffer target-window chills/last-async-shell-command-buffer)
+      (select-window target-window))
+    (when (and (not keep-old)
+               (buffer-live-p old-buffer)
+               (buffer-live-p chills/last-async-shell-command-buffer)
+               (not (eq old-buffer chills/last-async-shell-command-buffer)))
+      (kill-buffer old-buffer))))
+
 (defun chills/add-info-after-exit (orig-fun &rest args)
   "Attach process metadata after calling ORIG-FUN with ARGS."
-  (let* ((window (apply orig-fun args))
-         (buffer (and (window-live-p window) (window-buffer window)))
+  (let* ((command (car args))
+         (window (apply orig-fun args))
+         (output-buffer (or (cadr args)
+                            chills/last-async-shell-command-output-buffer-name))
+         (buffer (or (and (window-live-p window) (window-buffer window))
+                     (and (bufferp output-buffer) output-buffer)
+                     (and (stringp output-buffer) (get-buffer output-buffer))))
          (proc (and buffer (get-buffer-process buffer))))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (setq-local chills/async-shell-command command
+                    chills/async-shell-command-directory default-directory
+                    compile-command command)
+        (compilation-shell-minor-mode 1)))
+    (when (buffer-live-p buffer)
+      (setq chills/last-async-shell-command-buffer buffer))
     (when (process-live-p proc)
       (set-process-sentinel proc (apply-partially #'chills/process-callback buffer)))
     window))
 
 (defun chills/select-window-normal-mode (window)
   "Select WINDOW and enter evil normal state when available."
-  (select-window window)
-  (when (bound-and-true-p evil-mode)
-    (evil-normal-state nil))
+  (when (and (window-live-p window)
+             (not chills/async-shell-command-preserve-window))
+    (select-window window)
+    (when (bound-and-true-p evil-mode)
+      (evil-normal-state nil)))
   window)
 
 (unless (advice-member-p #'chills/set-output-buffer-name 'async-shell-command)
@@ -57,6 +114,15 @@
 
 (unless (advice-member-p #'chills/select-window-normal-mode 'async-shell-command)
   (advice-add 'async-shell-command :filter-return #'chills/select-window-normal-mode))
+
+(defun chills/shell-command-mode-setup ()
+  "Configure keybindings for async shell command output buffers."
+  (local-set-key (kbd "g r") #'chills/async-shell-command-rerun)
+  (when (fboundp 'evil-local-set-key)
+    (evil-local-set-key 'normal (kbd "gr") #'chills/async-shell-command-rerun)
+    (evil-local-set-key 'motion (kbd "gr") #'chills/async-shell-command-rerun)))
+
+(add-hook 'shell-command-mode-hook #'chills/shell-command-mode-setup)
 
 (defalias 'eshell/f #'find-file)
 
