@@ -495,11 +495,7 @@ This is needed for daemon-created client frames."
 ;;; languages
 (setq treesit-language-source-alist
       '(
-        (gleam "https://github.com/gleam-lang/tree-sitter-gleam")
         (yaml "https://github.com/ikatyang/tree-sitter-yaml")
-        (python "https://github.com/tree-sitter/tree-sitter-python")
-        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
         ))
 
 (defun treesit-install-if-missing (lang)
@@ -512,12 +508,8 @@ This is needed for daemon-created client frames."
 (setq major-mode-remap-alist
       '((yaml-mode . yaml-ts-mode)
         (bash-mode . bash-ts-mode)
-        (js2-mode . js-ts-mode)
-        (typescript-mode . typescript-ts-mode)
         (json-mode . json-ts-mode)
-        (css-mode . css-ts-mode)
-        (gleam-mode . gleam-ts-mode)
-        (python-mode . python-ts-mode)))
+        (css-mode . css-ts-mode)))
 
 ;;; languages/bazel
 (use-package bazel)
@@ -534,62 +526,6 @@ This is needed for daemon-created client frames."
 
 ;;; languages/scala
 (use-package scala-mode)
-
-;;; languages/cue
-(use-package cue-mode
-  )
-
-;;; languages/gleam
-(use-package gleam-ts-mode
-  :elpaca (gleam-ts-mode :host github :repo "gleam-lang/gleam-mode")
-  )
-
-(defun uv-activate ()
-  "Activate Python environment managed by uv based on current project directory.
-Looks for .venv directory in project root and activates the Python interpreter."
-  (interactive)
-  (let* ((project-root (project-root (project-current t)))
-         (venv-path (expand-file-name ".venv" project-root))
-         (python-path (expand-file-name
-                       (if (eq system-type 'windows-nt)
-                           "Scripts/python.exe"
-                         "bin/python")
-                       venv-path)))
-    (if (file-exists-p python-path)
-        (progn
-          (setq python-shell-interpreter python-path)
-
-          (let ((venv-bin-dir (file-name-directory python-path)))
-            (setq exec-path (cons venv-bin-dir
-                                  (remove venv-bin-dir exec-path))))
-
-          (setenv "PATH" (concat (file-name-directory python-path)
-                                 path-separator
-                                 (getenv "PATH")))
-
-          (setenv "VIRTUAL_ENV" venv-path)
-
-          (setenv "PYTHONHOME" nil)
-
-          (message "Activated UV Python environment at %s" venv-path))
-      (error "No UV Python environment found in %s" project-root))))
-
-;;; languages/tsx
-(use-package tide
-  :config
-  (defun setup-tide-mode ()
-    (interactive)
-    (tide-setup)
-    (flycheck-mode +1)
-    (setq flycheck-check-syntax-automatically '(save mode-enabled))
-    (eldoc-mode +1)
-    (tide-hl-identifier-mode +1)
-    ))
-
-
-(add-to-list 'major-mode-remap-alist '(typescript-mode . tsx-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.ts\\'" . tsx-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
 
 ;;; languages/nushell
 (use-package nushell-mode)
