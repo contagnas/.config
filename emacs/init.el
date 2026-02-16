@@ -1,7 +1,7 @@
 ;;; init.el --- Emacs config -*- lexical-binding: t; -*-
 
 ;;; setup/install elpaca
-(defvar elpaca-installer-version 0.7)
+(defvar elpaca-installer-version 0.11)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -324,9 +324,10 @@ This is needed for daemon-created client frames."
 ;;; magit
 (use-package seq)
 (use-package transient :after seq)
+(use-package with-editor :after transient)
 
 (use-package magit
-  :after transient
+  :after (transient with-editor)
   :general (spc "m" 'magit))
 
 ;;; org
@@ -405,81 +406,11 @@ This is needed for daemon-created client frames."
     "f" 'consult-projectile))
 
 ;;; eshell
-(setq shell-command-prompt-show-cwd t)
-
-(defvar command-datetime-format "%Y-%m-%d %H:%M:%S")
-
-(defun command-datetime-string () (format-time-string command-datetime-format))
-
-(defun set-output-buffer-name (args)
-  "Wraps `async-shell-command` to use a more informative output-buffer name"
-  (let* ((command (car args))
-         (time (command-datetime-string))
-         (output-buffer (concat "*Shell [" time "] (Running) " command)))
-    (list command output-buffer)))
-
-(advice-add 'async-shell-command :filter-args 'set-output-buffer-name)
-
-(defun process-callback (buffer process signal)
-  (when (memq (process-status process) '(exit signal))
-    (with-current-buffer buffer
-      (rename-buffer (string-replace
-                      "(Running)"
-                      (concat "(Exit " (number-to-string (process-exit-status process)) ")")
-                      (buffer-name)))
-      (insert (propertize
-               (concat "\n~\n"
-                       "~ Exited at " (command-datetime-string))
-               'font-lock-face 'font-lock-comment-face)))
-    (shell-command-sentinel process signal)))
-
-(defun add-info-after-exit (orig-fun &rest args)
-  (let* ((window (apply orig-fun args))
-         (buffer (window-buffer window))
-         (proc (get-buffer-process buffer)))
-    (progn
-      (when (process-live-p proc)
-        (set-process-sentinel proc (apply-partially 'process-callback buffer)))
-      window)))
-
-
-(advice-add 'async-shell-command :around 'add-info-after-exit)
-
-(defun select-window-normal-mode (window)
-  (select-window window)
-  (when bound-and-true-p evil-mode
-        (evil-normal-state nil)))
-(advice-add 'async-shell-command :filter-return 'select-window-normal-mode)
-
-(use-feature eshell
-  :preface
-  (defalias 'eshell/f 'find-file)
-  (defun eshell/clear ()
-    "Clear the eshell buffer."
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (eshell-send-input)))
-
-  :general
-  (spc-menu! "buffer" "s"
-    "e" 'eshell
-    "s" '(switch-to-buffer (async-shell-command))
-    )
-  )
-
-(defun eshell-prompt ()
-  "Custom Eshell prompt with PWD in the cursor's color."
-  (let ((pwd-color (face-attribute 'cursor :background nil 'default)))
-    (concat
-     (propertize (abbreviate-file-name (eshell/pwd)) 'face `(:foreground ,pwd-color))
-     (propertize " $ " 'face 'default))))
-
-(setq eshell-prompt-function #'eshell-prompt)
-(setq eshell-highlight-prompt nil)
+(load-file (expand-file-name "eshell.el" user-emacs-directory))
 
 ;;; eshell/eat
 (use-package eat
-  :elpaca (eat :type git
+  :ensure (eat :type git
                :host codeberg
                :repo "akib/emacs-eat"
                :files ("*.el" ("term" "term/*.el") "*.texi"
