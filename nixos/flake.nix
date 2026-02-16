@@ -4,7 +4,6 @@
   inputs = {
     # Nixpkgs
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # Home manager
     home-manager.url = "github:nix-community/home-manager";
@@ -43,14 +42,10 @@
     ...
   } @ inputs: let
     inherit (self) outputs;
-    systems = [
-      "x86_64-linux"
-    ];
-    forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
     # `nix fmt`
 
-    overlays = [inputs.niri.overlays.niri];
+    overlays.default = inputs.niri.overlays.niri;
 
     # NixOS configuration entrypoint
     # Available through 'nixos-rebuild --flake .'

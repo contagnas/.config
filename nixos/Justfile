@@ -13,14 +13,6 @@ niri-reload hostname=`hostname` user=`whoami`:
 niri-watch:
   echo "home.nix" | nix run nixpkgs#entr -- just niri-reload
 
-waybar-reload:
-  nix eval --quiet --json .#nixosConfigurations.nixos.config.home-manager.users.chills.programs.waybar.settings --apply builtins.attrValues > /tmp/waybar
-  mv /tmp/waybar ~/.config/waybar/active-config
-  ln -sf ~/.config/waybar/active-config ~/.config/waybar/config
-  pkill waybar || true
-  waybar &
-  disown
-
 nixos-test:
   nix build .#nixosConfigurations.nixos.config.system.build.toplevel --show-trace
 

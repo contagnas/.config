@@ -127,7 +127,7 @@
 
   users.users.chills = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "docker" "networkmanager" "podman" "audio"]; 
+    extraGroups = [ "wheel" "docker" "podman" "audio" ];
     shell = pkgs.nushell;
   };
 

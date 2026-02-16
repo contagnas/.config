@@ -1,10 +1,8 @@
 {
   inputs,
-  outputs,
   lib,
   config,
   pkgs,
-  system,
   ...
 }: rec {
   imports = [
@@ -99,7 +97,6 @@
   programs.niri = {
     settings = let
       xwaylandPort = ":69";
-      system = "x86_64-linux";
     in {
       binds = with config.lib.niri.actions; {
         "Mod+Shift+E".action = quit;
@@ -130,7 +127,7 @@
         "Mod+Shift+WheelScrollDown".action = focus-column-right;
 
         "Mod+R".action.spawn = lib.getExe pkgs.fuzzel;
-        "Mod+W".action.spawn = lib.getExe inputs.window-switcher.defaultPackage.${system};
+        "Mod+W".action.spawn = lib.getExe inputs.window-switcher.defaultPackage.${pkgs.stdenv.hostPlatform.system};
         "Mod+G".action.spawn = [(lib.getExe pkgs.google-chrome) "--remote-debugging-port=9222"];
         "Mod+Ctrl+Tab".action.spawn = "~/chrome-tab-switcher.nu";
         # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
