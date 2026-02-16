@@ -80,9 +80,26 @@
 
   programs.noctalia-shell = {
     enable = true;
-    settings = ./noctalia/settings.json;
-    colors = ./noctalia/colors.json;
-    plugins = ./noctalia/plugins.json;
+    systemd.enable = true;
+    settings = import ./noctalia/settings.nix;
+    colors = import ./noctalia/colors.nix;
+    plugins = import ./noctalia/plugins.nix;
+  };
+
+  systemd.user.services.noctalia-lock-on-start = {
+    Unit = {
+      Description = "Lock Noctalia on session start";
+      After = [
+        config.wayland.systemd.target
+        "noctalia-shell.service"
+      ];
+      PartOf = [ config.wayland.systemd.target ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash -lc 'for _ in $(seq 1 20); do noctalia-shell ipc call lockScreen lock && exit 0; sleep 0.5; done; exit 0'";
+    };
+    Install.WantedBy = [ config.wayland.systemd.target ];
   };
 
   stylix.targets.niri.enable = true;
@@ -192,16 +209,6 @@
             "bash"
             "-c"
             "${lib.getExe pkgs.xwayland-satellite} ${xwaylandPort} &> ~/.xwayland-satellite.log"
-          ];
-        }
-        {
-          command = [ "noctalia-shell" ];
-        }
-        {
-          command = [
-            "bash"
-            "-lc"
-            "for _ in $(seq 1 20); do noctalia-shell ipc call lockScreen lock && exit 0; sleep 0.5; done; exit 0"
           ];
         }
         # { command = [(lib.getExe pkgs.mako)]; }

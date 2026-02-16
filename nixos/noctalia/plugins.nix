@@ -1,0 +1,10 @@
+{
+  "sources" = [ {
+  "enabled" = true;
+  "name" = "Noctalia Plugins";
+  "url" = "https://github.com/noctalia-dev/noctalia-plugins";
+} ];
+  "states" = {};
+  "version" = 1;
+}
+
