@@ -58,6 +58,59 @@
     enable = true;
     # pgtk = pure gtk, has wayland support
     package = pkgs.emacs-pgtk;
+    extraPackages = epkgs: [
+      epkgs.filechooser
+    ];
+    extraConfig = ''
+      (with-eval-after-load 'filechooser
+        (setq filechooser-use-popup-frame nil)
+        (defun chills/filechooser-open-with-dired (prompt &optional dir filters &rest _ignore)
+          (filechooser-with-dired prompt dir filters))
+        (defun chills/filechooser-open-multi-with-dired (prompt &optional dir filters &rest _ignore)
+          (filechooser-with-dired prompt dir filters))
+        (setq filechooser-choose-file #'chills/filechooser-open-with-dired)
+        (setq filechooser-choose-files #'chills/filechooser-open-multi-with-dired)
+        (defun chills/filechooser-wrap-request (orig &rest args)
+          (let* ((display (or (getenv "WAYLAND_DISPLAY") (getenv "DISPLAY")))
+                 (bg (or (face-background 'default nil t) "#1e1e1e"))
+                 (fg (or (face-foreground 'default nil t) "#ffffff"))
+                 (params `((name . "filechooser-frame")
+                           (minibuffer . t)
+                           (width . 120)
+                           (height . 36)
+                           (background-color . ,bg)
+                           (foreground-color . ,fg)))
+                 (frame
+                  (cond
+                   ((and display (fboundp 'make-frame-on-display))
+                    (make-frame-on-display display params))
+                   (display
+                    (make-frame (append params (list (cons 'display display)))))
+                   (t
+                    (make-frame params)))))
+            (unwind-protect
+                (with-selected-frame frame
+                  (raise-frame frame)
+                  (select-frame-set-input-focus frame)
+                  (apply orig args))
+              (when (frame-live-p frame)
+                (delete-frame frame t)))))
+        (dolist (fn '(filechooser-handle-open-file
+                      filechooser-handle-save-file
+                      filechooser-handle-save-files))
+          (unless (advice-member-p #'chills/filechooser-wrap-request fn)
+            (advice-add fn :around #'chills/filechooser-wrap-request))))
+    '';
+  };
+  services.emacs = {
+    enable = true;
+    package = config.programs.emacs.finalPackage;
+    client.enable = true;
+    startWithUserSession = "graphical";
+  };
+  systemd.user.services.emacs.Service = {
+    Restart = lib.mkForce "always";
+    RestartSec = "1s";
   };
   programs.git.enable = true;
   programs.fuzzel.enable = true;
@@ -98,7 +151,7 @@
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash -lc 'for _ in $(seq 1 20); do ${lib.getExe config.programs.noctalia-shell.package} ipc call lockScreen lock && touch \"$XDG_RUNTIME_DIR/noctalia-lock-on-start.done\" && exit 0; sleep 0.5; done; exit 0'";
+      ExecStart = "${pkgs.bash}/bin/bash -lc 'i=0; while [ $i -lt 20 ]; do ${lib.getExe config.programs.noctalia-shell.package} ipc call lockScreen lock && ${pkgs.coreutils}/bin/touch \"$XDG_RUNTIME_DIR/noctalia-lock-on-start.done\" && exit 0; i=$((i+1)); ${pkgs.coreutils}/bin/sleep 0.5; done; exit 0'";
     };
     Install.WantedBy = [ config.wayland.systemd.target ];
   };
@@ -159,13 +212,14 @@
           "windows"
         ];
         "Mod+G".action.spawn = [(lib.getExe pkgs.google-chrome) "--remote-debugging-port=9222"];
-        "Mod+Ctrl+Tab".action.spawn = "~/chrome-tab-switcher.nu";
+        "Mod+Ctrl+Tab".action.spawn = "${config.home.homeDirectory}/chrome-tab-switcher.nu";
         # "Mod+E".action.spawn = "${pkgs.emacs}/bin/emacs"; # need to use emacs-with-packages, not base emacs
         "Mod+E".action.spawn = lib.getExe config.programs.emacs.finalPackage; # need to use emacs-with-packages, not base emacs
         "Mod+T".action.spawn = lib.getExe pkgs.foot;
 
         "Mod+V".action = toggle-window-floating;
         "Mod+S".action = screenshot;
+        "Mod+Shift+S".action = set-dynamic-cast-window;
       };
 
       outputs."DP-1" = {
@@ -224,6 +278,27 @@
         }
       ];
 
+      "window-rules" = [
+        {
+          matches = [
+            {
+              "app-id" = "^emacs$";
+              title = "^filechooser-frame$";
+            }
+          ];
+          "open-floating" = true;
+        }
+        {
+          matches = [
+            {
+              "app-id" = "^emacs$";
+              title = "^filechooser-miniframe$";
+            }
+          ];
+          "open-floating" = true;
+        }
+      ];
+
       overview = {
         "workspace-shadow".enable = false;
       };
@@ -237,7 +312,7 @@
       spawn-at-startup = [
         {
           command = [
-            "bash"
+            (lib.getExe pkgs.bash)
             "-c"
             "${lib.getExe pkgs.xwayland-satellite} ${xwaylandPort} &> ~/.xwayland-satellite.log"
           ];
@@ -250,11 +325,10 @@
         OZONE_PLATFORM = "wayland";
         NIXOS_OZONE_WL = "1";
         MOZ_ENABLE_WAYLAND = "1";
+        GTK_USE_PORTAL = "1";
         XDG_SESSION_TYPE = "wayland";
-        # xdg-desktop-portal-wlr recognizes wlroots compositors via XDG_CURRENT_DESKTOP/XDG_SESSION_DESKTOP;
-        # niri is not in its allowlist, so we spoof sway to ensure screencast works.
-        XDG_CURRENT_DESKTOP = "sway";
-        XDG_SESSION_DESKTOP = "sway";
+        XDG_CURRENT_DESKTOP = "niri";
+        XDG_SESSION_DESKTOP = "niri";
         QT_QPA_PLATFORM = "wayland";
         GDK_BACKEND = "wayland";
         # SDL_VIDEODRIVER = "wayland";

@@ -1,5 +1,19 @@
 { config, pkgs, ... }:
+let
+  emacsFilechooserPortal = pkgs.runCommand "emacs-filechooser-portal" { } ''
+    src_dir=$(echo ${pkgs.emacsPackages.filechooser}/share/emacs/site-lisp/elpa/filechooser-*)
+    ${pkgs.coreutils}/bin/mkdir -p "$out/share/xdg-desktop-portal/portals"
+    ${pkgs.gnused}/bin/sed 's/^UseIn=.*/UseIn=niri;wlroots;sway;/' \
+      "$src_dir/emacs.portal" > "$out/share/xdg-desktop-portal/portals/emacs.portal"
 
+    ${pkgs.coreutils}/bin/mkdir -p "$out/share/dbus-1/services"
+    cat > "$out/share/dbus-1/services/org.gnu.Emacs.FileChooser.service" <<'EOF'
+[D-BUS Service]
+Name=org.gnu.Emacs.FileChooser
+Exec=${pkgs.bash}/bin/bash -lc "i=0; while [ \$i -lt 100 ]; do ${pkgs.emacs-pgtk}/bin/emacsclient --socket-name=server -e '(progn (require (quote filechooser)) (filechooser-start))' && exit 0; i=\$((i+1)); ${pkgs.coreutils}/bin/sleep 0.1; done; exit 1"
+EOF
+  '';
+in
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -116,12 +130,35 @@
 
   xdg.portal = {
     enable = true;
-    wlr.enable = true;
-    extraPortals = [];
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-gnome
+      xdg-desktop-portal-gtk
+      emacsFilechooserPortal
+    ];
     config.common = {
-      default = ["wlr"];
-      "org.freedesktop.impl.portal.ScreenCast" = ["wlr"];
-      "org.freedesktop.impl.portal.Screenshot" = ["wlr"];
+      default = [ "gtk" "gnome" ];
+      "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+      "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+      "org.freedesktop.impl.portal.FileChooser" = [ "emacs" ];
+      "org.freedesktop.impl.portal.OpenURI" = [ "gtk" ];
+      "org.freedesktop.impl.portal.Access" = [ "gtk" ];
+      "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
+    };
+    config.niri = {
+      default = [ "gtk" "gnome" ];
+      "org.freedesktop.impl.portal.FileChooser" = [ "emacs" ];
+      "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+      "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+      "org.freedesktop.impl.portal.Access" = [ "gtk" ];
+      "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
+      "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
+    };
+  };
+
+  systemd.user.services.xdg-desktop-portal = {
+    unitConfig = {
+      Wants = [ "emacs.service" ];
+      After = [ "emacs.service" ];
     };
   };
 
@@ -129,12 +166,6 @@
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" "podman" "audio" ];
     shell = pkgs.nushell;
-  };
-
-  # xdg-desktop-portal-wlr expects a wlroots compositor name; use sway to avoid "niri" being rejected.
-  environment.sessionVariables = {
-    XDG_CURRENT_DESKTOP = "sway";
-    XDG_SESSION_DESKTOP = "sway";
   };
 
   networking.firewall.allowedTCPPorts = [ 6969 8080 8000 8980 9757 ];
