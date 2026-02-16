@@ -1,25 +1,28 @@
 list:
   just --list
 
-reload-nixos:
+nixos-reload:
   sudo nixos-rebuild switch --flake .
 
-reload-niri hostname=`hostname` user=`whoami`:
+niri-reload hostname=`hostname` user=`whoami`:
   nix eval --quiet --raw .#nixosConfigurations.{{hostname}}.config.home-manager.users.{{user}}.programs.niri.finalConfig > /tmp/config.kdl
   # without doing this tmp dance niri will reload with a blank config causing the screen to flash
   mv /tmp/config.kdl ~/.config/niri/active-config.kdl
   ln -sf ~/.config/niri/active-config.kdl ~/.config/niri/config.kdl
 
-watch-niri:
+niri-watch:
   echo "home.nix" | nix run nixpkgs#entr -- just niri-reload
 
-reload-waybar:
+waybar-reload:
   nix eval --quiet --json .#nixosConfigurations.nixos.config.home-manager.users.chills.programs.waybar.settings --apply builtins.attrValues > /tmp/waybar
   mv /tmp/waybar ~/.config/waybar/active-config
   ln -sf ~/.config/waybar/active-config ~/.config/waybar/config
   pkill waybar || true
   waybar &
   disown
+
+nixos-test:
+  nix build .#nixosConfigurations.nixos.config.system.build.toplevel --show-trace
 
 nix-repl hostname=`hostname`:
   nix repl ".#nixosConfigurations.\"{{hostname}}\""

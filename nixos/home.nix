@@ -7,7 +7,9 @@
   system,
   ...
 }: rec {
-  imports = [];
+  imports = [
+    inputs.noctalia.homeModules.default
+  ];
 
   home = {
     username = "chills";
@@ -76,6 +78,13 @@
     border.radius = "0";
     main.dpi-aware = "no";
     main.line-height = "16";
+  };
+
+  programs.noctalia-shell = {
+    enable = true;
+    settings = ./noctalia/settings.json;
+    colors = ./noctalia/colors.json;
+    plugins = ./noctalia/plugins.json;
   };
 
   stylix.targets.niri.enable = true;
@@ -186,6 +195,16 @@
             "bash"
             "-c"
             "${lib.getExe pkgs.xwayland-satellite} ${xwaylandPort} &> ~/.xwayland-satellite.log"
+          ];
+        }
+        {
+          command = [ "noctalia-shell" ];
+        }
+        {
+          command = [
+            "bash"
+            "-lc"
+            "for _ in $(seq 1 20); do noctalia-shell ipc call lockScreen lock && exit 0; sleep 0.5; done; exit 0"
           ];
         }
         # { command = [(lib.getExe pkgs.mako)]; }

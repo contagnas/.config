@@ -20,6 +20,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     window-switcher = {
       url = ./pkgs/window-switcher;
       inputs.nixpkgs.follows = "nixpkgs";
@@ -58,7 +63,7 @@
           inputs.niri.nixosModules.niri
           inputs.stylix.nixosModules.stylix
           home-manager.nixosModules.home-manager {
-            home-manager.backupFileExtension = "hmbak";
+            home-manager.backupFileExtension = "hmbackup";
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.users.chills = ./home.nix;

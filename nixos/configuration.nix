@@ -48,6 +48,7 @@
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = false;
+  networking.dhcpcd.wait = "if-carrier-up";
   services.upower.enable = true;
   networking.interfaces.enp6s0.useDHCP = true;
 
@@ -60,7 +61,30 @@
   };
 
   services.xserver.videoDrivers = ["nvidia"];
-  programs.niri.enable = true;
+  services.greetd = {
+    enable = true;
+    useTextGreeter = true;
+    settings = {
+      initial_session = {
+        user = "chills";
+        command = "${pkgs.niri}/bin/niri-session";
+      };
+      default_session = {
+        command = "${pkgs.greetd}/bin/agreety --cmd ${pkgs.niri}/bin/niri-session";
+      };
+    };
+  };
+  programs.niri = {
+    enable = true;
+    package = pkgs.niri;
+  };
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc
+      zlib
+    ];
+  };
 
   hardware.nvidia = {
     # modesetting is required

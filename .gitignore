@@ -6,3 +6,4 @@
 !home-manager
 !nix-darwin
 !nixos
+/nixos/result
