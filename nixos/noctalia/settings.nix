@@ -41,7 +41,7 @@
   "barType" = "simple";
   "capsuleColorKey" = "none";
   "capsuleOpacity" = 1;
-  "density" = "comfortable";
+  "density" = "spacious";
   "displayMode" = "always_visible";
   "floating" = false;
   "frameRadius" = 12;
