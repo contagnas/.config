@@ -134,6 +134,39 @@ Without KEEP-OLD, delete the current buffer after switching to the new run."
     (erase-buffer)
     (eshell-send-input)))
 
+(defconst chills/eshell-atuin-directory
+  (expand-file-name "local/eshell-atuin" user-emacs-directory)
+  "Path to vendored `eshell-atuin' sources.")
+
+(defun chills/eshell--require-atuin ()
+  "Require and enable `eshell-atuin' globally.
+Atuin is mandatory for Eshell in this configuration."
+  (let ((atuin (executable-find "atuin")))
+    (unless atuin
+      (user-error "Atuin is required for Eshell; install `atuin` first"))
+    (add-to-list 'load-path chills/eshell-atuin-directory)
+    (unless (require 'eshell-atuin nil t)
+      (user-error "Missing %s/eshell-atuin.el" chills/eshell-atuin-directory))
+    (setq eshell-atuin-executable atuin
+          eshell-atuin-filter-mode 'global)
+    (unless eshell-atuin-mode
+      (eshell-atuin-mode 1))))
+
+(defvar chills/eshell-shared-history-ring nil
+  "Shared history ring reused by all Eshell buffers.")
+
+(defun chills/eshell--enable-shared-history ()
+  "Use a single history ring across all Eshell buffers."
+  (cond
+   ((ring-p chills/eshell-shared-history-ring)
+    (setq-local eshell-history-ring chills/eshell-shared-history-ring))
+   ((ring-p eshell-history-ring)
+    (setq chills/eshell-shared-history-ring eshell-history-ring)
+    (setq-local eshell-history-ring chills/eshell-shared-history-ring))
+   (t
+    (setq chills/eshell-shared-history-ring (make-ring eshell-history-size))
+    (setq-local eshell-history-ring chills/eshell-shared-history-ring))))
+
 (defun chills/eshell--eshell-buffer-p (buffer)
   "Return non-nil when BUFFER is an Eshell buffer."
   (with-current-buffer buffer
@@ -181,6 +214,7 @@ Without ARG, switch to the most recent Eshell buffer, creating one in the
 current directory when none exist.
 With ARG, switch to an existing Eshell in the current directory or create one."
   (interactive "P")
+  (chills/eshell--require-atuin)
   (let* ((directory default-directory)
          (target
           (if arg
@@ -259,6 +293,9 @@ With ARG, switch to an existing Eshell in the current directory or create one."
 
 (defun chills/eshell-mode-setup ()
   "Set up buffer-local Eshell behavior."
+  (chills/eshell--require-atuin)
+  (chills/eshell--enable-shared-history)
+  (local-set-key (kbd "C-r") #'eshell-atuin-history)
   (add-hook 'eshell-directory-change-hook #'chills/eshell--update-buffer-name nil t)
   (add-hook 'eshell-pre-command-hook #'chills/eshell--update-buffer-name nil t)
   (add-hook 'eshell-post-command-hook #'chills/eshell--update-buffer-name nil t)

@@ -333,7 +333,7 @@
   "firstDayOfWeek" = -1;
   "hideWeatherCityName" = false;
   "hideWeatherTimezone" = false;
-  "name" = "San Francisco";
+  "name" = "San Francisco, CA";
   "showCalendarEvents" = true;
   "showCalendarWeather" = true;
   "showWeekNumberInCalendar" = false;

@@ -26,6 +26,7 @@
     ripgrep
     fd
     direnv
+    atuin
     unzip
     jq
     helvum
